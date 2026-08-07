@@ -1,0 +1,2705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Holy Pixel Wall</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf6ee;
+    --surface: #fffdf8;
+    --panel: #f3e6c8;
+    --text: #3a2a1a;
+    --muted: #7a6248;
+    --border: #d2b48c;
+    --gold: #d4a017;
+    --dark: #8b5a2b;
+    --primary: #c47a3a;
+    --accent: #c47a3a;
+    --danger: #b33a2b;
+    --success: #3d8b4a;
+    --pixel-shadow: 3px 3px 0 #5c3d1e;
+    --line: 2px solid var(--border);
+    --line-gold: 2px solid var(--gold);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #faf7f1 100%);
+    border-bottom: var(--line-gold);
+    flex-shrink: 0;
+    z-index: 50;
+    gap: 10px;
+    flex-wrap: wrap;
+    box-shadow: 0 2px 0 rgba(201,155,60,0.25);
+  }
+  .brand { flex: 0 0 auto; min-width: 120px; }
+  .header-right { flex: 0 0 auto; margin-left: auto; }
+  .center-badge { flex: 1 1 auto; display: flex; justify-content: center; }
+  .price-badge { flex: 0 1 auto; }
+
+  .brand h1 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.72rem;
+    color: var(--dark);
+    letter-spacing: 1px;
+  }
+  .brand p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .price-badge {
+    background: #fff;
+    color: var(--dark);
+    padding: 8px 12px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.42rem;
+    border: var(--line-gold);
+    box-shadow: var(--pixel-shadow);
+    line-height: 1.45;
+  }
+
+  .center-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .hw-banner {
+    background: linear-gradient(90deg, #c47a3a, #d4a017, #e6c04a);
+    padding: 7px 16px;
+    border: var(--line-gold);
+    box-shadow: var(--pixel-shadow);
+    animation: bannerShift 1.6s steps(2) infinite, pixelPulse 2s steps(2) infinite;
+  }
+  .hw-text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.5rem;
+    color: #2c221e;
+    display: inline-block;
+  }
+  .live-tag {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #eef8ee;
+    border: 3px solid var(--success);
+    box-shadow: var(--pixel-shadow);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.4rem;
+    color: #1e5c28;
+    animation: viewerGlow 1.4s steps(2) infinite;
+    letter-spacing: 0.5px;
+  }
+  .live-tag .live-label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .live-tag .live-label em {
+    font-style: normal;
+    font-size: 0.32rem;
+    color: var(--success);
+    animation: pixelBlink 1s steps(2) infinite;
+  }
+  .live-tag #viewerCount {
+    font-size: 0.7rem;
+    color: #146b28;
+    animation: countPop 2s steps(2) infinite;
+  }
+  .live-dot {
+    width: 12px; height: 12px;
+    background: var(--success);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--success);
+    animation: pixelBlink 0.8s steps(2) infinite;
+    flex-shrink: 0;
+  }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  @keyframes pixelBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.3; } }
+  @keyframes pixelPulse {
+    0%, 100% { box-shadow: 3px 3px 0 #5c3d1e; }
+    50% { box-shadow: 5px 5px 0 #5c3d1e, 0 0 0 2px var(--gold); }
+  }
+  @keyframes bannerShift {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.08); }
+  }
+  @keyframes viewerGlow {
+    0%, 100% { box-shadow: 3px 3px 0 #5c3d1e, 0 0 0 0 rgba(61,139,74,0.4); }
+    50% { box-shadow: 3px 3px 0 #5c3d1e, 0 0 0 6px rgba(61,139,74,0.15); }
+  }
+  @keyframes countPop {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  @keyframes gridDrift {
+    0% { background-position: 0 0, 0 0; }
+    100% { background-position: 12px 12px, 12px 12px; }
+  }
+  @keyframes borderFlicker {
+    0%, 100% { border-color: var(--gold); }
+    50% { border-color: #e6c04a; }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .willow {
+    background: #fff;
+    border: var(--line);
+    padding: 6px 10px 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    box-shadow: var(--pixel-shadow);
+  }
+  .willow:hover { border-color: var(--gold); }
+  .willow:active { transform: translate(2px, 2px); box-shadow: none; }
+  .willow span {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.42rem;
+    color: var(--dark);
+  }
+
+  .counter {
+    background: #fff;
+    border: var(--line);
+    padding: 6px 10px;
+    box-shadow: var(--pixel-shadow);
+    text-align: right;
+  }
+  .counter-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.38rem;
+    color: var(--muted);
+  }
+  .counter-num {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.52rem;
+    color: var(--dark);
+  }
+  .progress {
+    width: 74px;
+    height: 7px;
+    background: #eee6d8;
+    border: var(--line);
+    margin-top: 4px;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--gold);
+    transition: width 0.3s steps(8);
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--surface);
+    border-bottom: var(--line);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    z-index: 40;
+  }
+  .tool-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.42rem;
+    padding: 8px 10px;
+    background: var(--surface);
+    color: var(--text);
+    border: var(--line-gold);
+    box-shadow: var(--pixel-shadow);
+    cursor: pointer;
+    animation: borderFlicker 3s steps(2) infinite;
+  }
+  .tool-btn:hover { background: var(--panel); }
+  .tool-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+  .tool-btn.tool-active {
+    background: var(--gold);
+    color: #2c221e;
+    border-color: var(--gold);
+  }
+  .viewport.drag-mode, .viewport.drag-mode canvas {
+    cursor: grab !important;
+  }
+  .viewport.drag-mode.panning, .viewport.drag-mode.panning canvas {
+    cursor: grabbing !important;
+  }
+
+  .viewport.panning, .viewport.panning * {
+    cursor: grabbing !important;
+  }
+  .viewport {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: auto;
+    cursor: crosshair;
+    -webkit-overflow-scrolling: touch;
+    background: #f5f0e6;
+    padding: 0;
+  }
+
+  #wallWrap {
+    position: relative;
+    margin: 0 auto;
+    box-sizing: content-box;
+  }
+
+  .stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    border: 2px solid #3d2b1a;
+    box-sizing: border-box;
+    box-shadow: 3px 3px 0 rgba(92,61,30,0.25);
+    outline: none;
+    line-height: 0;
+    will-change: transform;
+    background: #fffdf8;
+    margin: 0;
+    transform-origin: 0 0;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+
+  canvas {
+    display: block;
+    background: #fffdf8;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+
+  .media-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .media-layer .media-item {
+    position: absolute;
+    object-fit: contain;
+    background: #1a1512;
+    pointer-events: none;
+    image-rendering: auto;
+  }
+
+  .float-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #fff;
+    border: var(--line-gold);
+    box-shadow: var(--pixel-shadow);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.2s steps(4), opacity 0.2s;
+  }
+  .float-bar.visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .sel-sum {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.5rem;
+    color: var(--text);
+  }
+  .sel-sum strong { color: var(--gold); }
+  .btn-clear {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.4rem;
+    background: transparent;
+    color: var(--muted);
+    border: 2px solid var(--border);
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .btn-clear:hover { color: var(--text); border-color: var(--text); }
+  .btn-claim {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.45rem;
+    background: var(--gold);
+    color: #2c221e;
+    border: 3px solid #fff;
+    padding: 8px 14px;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #3d2b1a;
+  }
+  .btn-claim:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 #3d2b1a; }
+  .btn-claim:active { transform: translate(2px,2px); box-shadow: none; }
+
+  .mascot {
+    position: fixed;
+    bottom: 18px;
+    left: 18px;
+    width: 56px;
+    height: 56px;
+    background: var(--panel);
+    border: 4px solid var(--gold);
+    box-shadow: 4px 4px 0 #3d2b1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 90;
+    cursor: pointer;
+    animation: bob 1.2s steps(2) infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  .mascot:hover { transform: scale(1.1); }
+  .mascot svg { width: 40px; height: 40px; }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(60,40,20,0.55);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal {
+    background: var(--surface);
+    border: 4px solid var(--gold);
+    box-shadow: 8px 8px 0 #3d2b1a;
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-head {
+    padding: 14px 18px;
+    background: var(--panel);
+    border-bottom: 3px solid var(--border);
+  }
+  .modal-head h3 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.65rem;
+    color: var(--dark);
+  }
+  .modal-head p {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .modal-body {
+    padding: 14px 18px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .modal-foot {
+    padding: 12px 18px;
+    background: var(--panel);
+    border-top: 3px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.4rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+  .field input[type="text"],
+  .field input[type="url"],
+  .field select {
+    width: 100%;
+    padding: 8px 10px;
+    background: #ffffff;
+    border: 3px solid var(--border);
+    color: var(--text);
+    font-family: 'VT323', monospace;
+    font-size: 1.1rem;
+    outline: none;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--gold);
+  }
+  .field input[type="color"] {
+    width: 100%;
+    height: 36px;
+    border: 3px solid var(--border);
+    background: #ffffff;
+    cursor: pointer;
+  }
+
+  .upload {
+    border: 3px dashed var(--border);
+    background: #ffffff;
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .upload:hover, .upload.drag { border-color: var(--gold); }
+  .upload.has { border-style: solid; border-color: var(--success); }
+  .upload p { color: var(--muted); font-size: 0.95rem; }
+  .upload img, .upload video {
+    max-width: 100%;
+    max-height: 110px;
+    display: none;
+    margin: 0 auto 6px;
+    object-fit: contain;
+  }
+  .upload.has img, .upload.has video { display: block; }
+  .upload.has p { display: none; }
+
+  .fit-row { display: flex; gap: 4px; margin-top: 6px; }
+  .fit-btn {
+    flex: 1;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.35rem;
+    padding: 6px 2px;
+    background: #ffffff;
+    border: 2px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .fit-btn.active {
+    background: var(--gold);
+    color: #2c221e;
+    border-color: var(--gold);
+  }
+
+  .btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.45rem;
+    padding: 10px 14px;
+    border: 3px solid;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #3d2b1a;
+  }
+  .btn:active { transform: translate(2px,2px); box-shadow: none; }
+  .btn-sec {
+    background: var(--panel);
+    color: var(--muted);
+    border-color: var(--border);
+  }
+  .btn-pri {
+    background: var(--gold);
+    color: #2c221e;
+    border-color: #fff;
+  }
+
+  .tip {
+    position: absolute;
+    background: var(--surface);
+    border: 3px solid var(--gold);
+    box-shadow: 4px 4px 0 #3d2b1a;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    pointer-events: none;
+    display: none;
+    z-index: 200;
+    max-width: 240px;
+    line-height: 1.3;
+  }
+  .tip strong {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.5rem;
+    color: var(--dark);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .toast {
+    position: fixed;
+    top: 86px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: var(--surface);
+    border: 3px solid var(--gold);
+    box-shadow: 4px 4px 0 #3d2b1a;
+    padding: 10px 16px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.45rem;
+    color: var(--text);
+    z-index: 3000;
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.15s steps(3);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .motivation-card {
+    background: var(--surface);
+    border: 4px solid var(--gold);
+    box-shadow: 8px 8px 0 #3d2b1a;
+    padding: 24px;
+    max-width: 400px;
+    text-align: center;
+  }
+  .motivation-card h3 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.65rem;
+    color: var(--dark);
+    margin-bottom: 12px;
+  }
+  .motivation-card p {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.4;
+    margin-bottom: 18px;
+  }
+
+  @media (max-width: 700px) {
+    header { padding: 6px 8px; gap: 6px; }
+    .brand h1 { font-size: 0.5rem; }
+    .brand p { font-size: 0.75rem; }
+    .price-badge, .center-badge, .willow span { display: none; }
+    .live-tag { font-size: 0.34rem; padding: 6px 8px; gap: 6px; }
+    .live-tag #viewerCount { font-size: 0.48rem; }
+    .live-tag .live-label em { font-size: 0.28rem; }
+    .tool-btn { font-size: 0.34rem; padding: 6px 8px; }
+    .counter { padding: 4px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>HOLY PIXEL WALL</h1>
+    <p>Claim your place on the Holy Pixel Wall</p>
+  </div>
+  <div class="price-badge">$0.10 / 1 DAY · $0.25 / 10 DAYS · $50 PERM</div>
+  <div class="center-badge">
+    <div class="hw-banner"><span class="hw-text">CLAIM PIXELS</span></div>
+  </div>
+  <div class="header-right">
+    <div class="live-tag" title="People viewing the wall right now">
+      <span class="live-dot"></span>
+      <div class="live-label">
+        <em>● LIVE</em>
+        <span><span id="viewerCount">27842</span> ONLINE</span>
+      </div>
+    </div>
+    <div class="willow" id="willow" title="Wish Stick">
+      <svg width="22" height="22" viewBox="0 0 100 100">
+        <path d="M48 90 Q52 50 44 20 Q42 12 48 8 Q54 15 52 30 Q58 60 52 90Z" fill="#8b5a2b"/>
+        <circle cx="48" cy="10" r="6" fill="#d4a017"/>
+      </svg>
+      <span>WISH</span>
+    </div>
+    <div class="counter">
+      <div class="counter-label">SOLD</div>
+      <div class="counter-num" id="counterText">0/—</div>
+      <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <button class="tool-btn tool-active" id="toolSelect" type="button" title="Select pixels">SELECT</button>
+  <button class="tool-btn" id="toolDrag" type="button" title="Drag to move around">DRAG</button>
+  <button class="tool-btn" id="toolDev" type="button" title="Developer: edit claims on click">DEV</button>
+  <button class="tool-btn" id="toolUndo" type="button" title="Undo selection (Ctrl+Z)">UNDO</button>
+  <button class="tool-btn" id="toolClaims" type="button" title="List claims on this device">MY CLAIMS</button>
+  <button class="tool-btn" id="zoomOut">−</button>
+  <span id="zoomLvl" style="font-family:'Press Start 2P',monospace;font-size:0.4rem;color:var(--dark);min-width:42px;text-align:center">100%</span>
+  <button class="tool-btn" id="zoomIn">+</button>
+  <button class="tool-btn" id="zoomFit">FIT</button>
+  <button class="tool-btn" id="exportBtn">EXPORT</button>
+  <button class="tool-btn" id="helpBtn">HOW IT WORKS</button>
+</div>
+
+<div class="viewport" id="viewport">
+  <div id="wallWrap">
+    <div class="stage" id="stage">
+      <canvas id="canvas"></canvas>
+      <div class="media-layer" id="mediaLayer"></div>
+    </div>
+  </div>
+</div>
+
+<div class="float-bar" id="floatBar">
+  <div class="sel-sum"><strong id="selCount">0</strong> PX · <strong id="selPrice">$0</strong></div>
+  <button class="btn-clear" id="clearBtn">CLEAR</button>
+  <button class="btn-claim" id="claimBtn">CLAIM</button>
+</div>
+
+<div class="overlay" id="claimModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>CLAIM PIXELS</h3>
+      <p>Once paid, your pixels stay locked until time runs out.</p>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>OWNER / BRAND</label>
+        <input type="text" id="ownerName" placeholder="YOUR NAME" maxlength="40">
+      </div>
+      <div class="field">
+        <label>SHORT DESCRIPTION (SHOWN ON HOVER)</label>
+        <input type="text" id="desc" placeholder="A few words about you or your brand" maxlength="120">
+      </div>
+      <div class="field">
+        <label>DURATION</label>
+        <select id="duration">
+          <option value="1day">1 DAY — $0.10 / PX</option>
+          <option value="daily">10 DAYS — $0.25 / PX</option>
+          <option value="permanent">PERMANENT — $50 / PX</option>
+        </select>
+      </div>
+      <div class="field" style="display:flex;gap:10px">
+        <div style="flex:1">
+          <label>PIXELS</label>
+          <input type="text" id="infoPixels" readonly>
+        </div>
+        <div style="flex:1">
+          <label>TOTAL</label>
+          <input type="text" id="infoPrice" readonly style="color:var(--gold);font-weight:bold">
+        </div>
+      </div>
+      <div class="field">
+        <label>IMAGE / GIF / VIDEO</label>
+        <div class="upload" id="upload">
+          <input type="file" id="file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,video/mp4,video/webm,video/*" hidden>
+          <p>CLICK OR DROP<br>IMAGE · GIF · VIDEO</p>
+          <img id="preview" alt="">
+          <video id="previewVideo" muted loop playsinline style="display:none;max-width:100%;max-height:110px;margin:0 auto"></video>
+        </div>
+        <div class="fit-row" id="fitRow" style="display:none">
+          <button type="button" class="fit-btn" data-fit="cover">COVER</button>
+          <button type="button" class="fit-btn active" data-fit="contain">CONTAIN</button>
+          <button type="button" class="fit-btn" data-fit="fill">STRETCH</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>OR MEDIA URL</label>
+        <input type="text" id="imgUrl" placeholder="https://... (image, gif, or video)">
+      </div>
+      <div class="field">
+        <label>SOCIAL / LINK (PROFILE OR POST)</label>
+        <div style="display:flex;gap:6px">
+          <select id="linkType" style="width:42%;padding:8px 6px;background:#fffef8;border:3px solid var(--border);color:var(--text);font-family:'VT323',monospace;font-size:1rem">
+            <option value="none">NONE</option>
+            <option value="instagram">INSTAGRAM</option>
+            <option value="tiktok">TIKTOK</option>
+            <option value="youtube">YOUTUBE</option>
+            <option value="twitter">X / TWITTER</option>
+            <option value="website">WEBSITE</option>
+            <option value="other">OTHER</option>
+          </select>
+          <input type="text" id="link" placeholder="profile or post URL" style="flex:1;display:none">
+        </div>
+      </div>
+      <div class="field">
+        <label>PAYMENT METHOD</label>
+        <div id="payMethods" style="display:flex;flex-wrap:wrap;gap:6px">
+          <button type="button" class="fit-btn pay-btn active" data-pay="card">CARD</button>
+          <button type="button" class="fit-btn pay-btn" data-pay="paypal">PAYPAL</button>
+          <button type="button" class="fit-btn pay-btn" data-pay="crypto">CRYPTO</button>
+        </div>
+        <div id="payCardFields" style="margin-top:8px">
+          <input type="text" id="cardName" placeholder="Name on card" maxlength="40" style="margin-bottom:6px">
+          <input type="text" id="cardNumber" placeholder="Card number" maxlength="19" style="margin-bottom:6px">
+          <div style="display:flex;gap:6px">
+            <input type="text" id="cardExp" placeholder="MM/YY" maxlength="5" style="flex:1">
+            <input type="text" id="cardCvv" placeholder="CVV" maxlength="4" style="flex:1">
+          </div>
+        </div>
+        <div id="payAltFields" style="display:none;margin-top:8px">
+          <input type="email" id="payEmail" placeholder="Email for receipt">
+        </div>
+        <p id="payTotalLine" style="font-family:'Press Start 2P',monospace;font-size:0.45rem;color:var(--dark);margin-top:10px">TOTAL: $0.00</p>
+        <p id="payHint" style="font-size:0.85rem;color:var(--muted);margin-top:6px">Secure checkout · complete payment to claim</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sec" id="cancelBtn">CANCEL</button>
+      <button class="btn btn-pri" id="confirmBtn">PAY & CLAIM</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="motModal">
+  <div class="motivation-card">
+    <div style="font-size:2rem;margin-bottom:8px">✦</div>
+    <h3 id="motTitle"></h3>
+    <p id="motText"></p>
+    <button class="btn btn-pri" id="motClose">OK</button>
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<div class="overlay" id="helpModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head">
+      <h3>HOW IT WORKS</h3>
+      <p>Holy Pixel Wall — claim your place on the wall.</p>
+    </div>
+    <div class="modal-body" style="font-size:1rem;line-height:1.45;color:var(--muted)">
+      <p style="margin-bottom:10px"><strong style="color:var(--dark)">1.</strong> Drag to select free pixels.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--dark)">2.</strong> Add your name, image / GIF / video, optional link & description.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--dark)">3.</strong> Pay ($0.10 for 1 day, $0.25 for 10 days, or $50 permanent).</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--dark)">4.</strong> Your pixels stay locked — others cannot take them until time ends.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--dark)">Hover</strong> any claim to see owner, description, and time left.</p>
+      <p style="margin-top:12px;font-size:0.9rem">Your claims stay on this device until they expire. For a public shared wall with real payments for everyone, connect a backend (e.g. Stripe + database). This UI is ready to publish and plug in.</p>
+    </div>
+    <div class="modal-foot">
+      <div style="text-align:left;font-size:0.95rem;color:var(--muted);margin:0 18px 12px;line-height:1.45">
+<strong style="color:var(--dark)">SHORTCUTS</strong><br>
+Drag = rectangle · Double-click = 10×10 block<br>
+Scroll = pan · Pinch / Ctrl+wheel = zoom<br>
+Space+drag or DRAG tool = pan<br>
+Ctrl+Z = undo · Esc = clear · Enter = claim<br>
+Arrows = pan · +/− = zoom · 0 = fit<br>
+Min 100 · Max 400 blocks per buy
+</div>
+<button class="btn btn-pri" id="helpClose">GOT IT</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const MS_DAY = 86400000;
+  const STORE = 'holy_pixel_wall_v1';
+  // Fresh wall for Holy Pixel Wall — clear old data once
+  try {
+    if (localStorage.getItem('holy_pixel_wall_cleared') !== '1') {
+      localStorage.removeItem(STORE);
+      ['pixelwall_pub_v1','pixelwall_v3','pixelwall_v2','10000pixels','pixel_wall'].forEach(k => localStorage.removeItem(k));
+      localStorage.setItem('holy_pixel_wall_cleared', '1');
+    }
+  } catch (e) {}
+
+  const $ = id => document.getElementById(id);
+  const canvas = $('canvas');
+  const ctx = canvas.getContext('2d', { alpha: true });
+  const viewport = $('viewport');
+  const stage = $('stage');
+  const mediaLayer = $('mediaLayer');
+  const floatBar = $('floatBar');
+  const tip = $('tip');
+  const toastEl = $('toast');
+
+  // Adaptive grid: more columns on desktop (landscape), more rows on phone (portrait)
+  let COLS = 250, ROWS = 200, TOTAL = 50000;
+  let selected = new Set();
+  const selectHistory = [];
+  const MAX_HISTORY = 20;
+  let sold = new Map();
+  let regions = [];
+  let pendingMedia = '';
+  let pendingType = 'image';
+  let fitMode = 'contain';
+  let dragging = false, deselect = false, additiveSelect = false, didDrag = false;
+  let startC = 0, startR = 0, curC = 0, curR = 0;
+  let dragBaseline = new Set(); // selection before this drag started
+  let toolMode = 'select';
+  let devMode = false;
+  let spaceHeld = false;
+  let panning = false, panLastX = 0, panLastY = 0;
+  const SECTION = 10; // big block = 10×10 pixels
+  const MIN_BUY = 100;
+  const MAX_BUY = 400;
+  let sizeW = 600, sizeH = 600, cell = 6;
+  let baseW = 600, baseH = 600, baseCell = 6;
+  let zoom = 1, hqZoom = 1, zoomTimer = null;
+  const imgCache = new Map();
+
+  function computeGrid() {
+    // ~50,000 square blocks — expand into free side space
+    const vw = Math.max(viewport.clientWidth, 120);
+    const vh = Math.max(viewport.clientHeight, 120);
+    const aspect = vw / vh;
+    const TARGET = 50000;
+    let cols = Math.round(Math.sqrt(TARGET * aspect));
+    let rows = Math.round(TARGET / cols);
+    // Snap to 10 so section grid lines up evenly
+    cols = Math.max(100, Math.min(400, Math.round(cols / 10) * 10));
+    rows = Math.max(100, Math.min(400, Math.round(rows / 10) * 10));
+    while (cols * rows > 52000 && rows >= 110) rows -= 10;
+    while (cols * rows < 48000 && cols <= 390) cols += 10;
+    COLS = cols;
+    ROWS = rows;
+    TOTAL = COLS * ROWS;
+  }
+
+  const quotes = [
+    { t: "STAY STRONG", x: "Even storms cannot break deep roots. You are stronger than you think." },
+    { t: "KEEP GOING", x: "Every quiet step builds something great. You are right on time." },
+    { t: "SHINE ON", x: "Your inner fire cannot be put out. Chase what lights you up." },
+    { t: "NEW DAY", x: "Setbacks make space for better things. Tomorrow is a fresh map." }
+  ];
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastEl._t);
+    toastEl._t = setTimeout(() => toastEl.classList.remove('show'), 2400);
+  }
+
+  function price() {
+    const d = $('duration').value;
+    if (d === 'permanent') return 50;
+    if (d === '1day') return 0.10;
+    return 0.25;
+  }
+
+  function durationMs(d) {
+    if (d === 'permanent') return Infinity;
+    if (d === '1day') return MS_DAY;
+    return MS_DAY * 10;
+  }
+
+  function expired(r) {
+    if (r.duration === 'permanent') return false;
+    return Date.now() - r.claimedAt >= durationMs(r.duration);
+  }
+
+  function left(r) {
+    if (r.duration === 'permanent') return 'PERMANENT';
+    const ms = durationMs(r.duration) - (Date.now() - r.claimedAt);
+    if (ms <= 0) return 'EXPIRED';
+    const d = Math.floor(ms / 86400000);
+    const h = Math.floor((ms % 86400000) / 3600000);
+    if (d > 0) return d + 'D ' + h + 'H LEFT';
+    const m = Math.floor((ms % 3600000) / 60000);
+    return h > 0 ? h + 'H ' + m + 'M LEFT' : m + 'M LEFT';
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORE, JSON.stringify({
+        regions: regions.map(r => {
+          const copy = { ...r };
+          if (copy.media && copy.media.startsWith('data:') && copy.media.length > 2500000) {
+            copy.media = '';
+          }
+          return copy;
+        })
+      }));
+    } catch (e) {
+      toast('STORAGE FULL — large files may not persist');
+    }
+  }
+
+  function load() {
+    try {
+      const d = JSON.parse(localStorage.getItem(STORE) || '{}');
+      regions = [];
+      sold.clear();
+      (d.regions || []).forEach(r => {
+        if (expired(r)) return;
+        if (!r.mediaType) r.mediaType = detectMediaType(r.media);
+        regions.push(r);
+        if (r.cells && r.cells.length) {
+          r.cells.forEach(k => sold.set(k, r));
+        } else {
+          for (let c = r.minC; c <= r.maxC; c++)
+            for (let row = r.minR; row <= r.maxR; row++)
+              sold.set(c + ',' + row, r);
+        }
+      });
+    } catch (e) {}
+  }
+
+  function resize(fitReset) {
+    computeGrid();
+    // Use almost full viewport so blocks are as large as possible
+    const pad = 4;
+    const vw = Math.max(viewport.clientWidth - pad * 2, 80);
+    const vh = Math.max(viewport.clientHeight - pad * 2, 80);
+    let s = Math.min(vw / COLS, vh / ROWS);
+    if (!isFinite(s) || s < 0.5) s = 0.5;
+    baseCell = s;
+    cell = s;
+    baseW = COLS * s;
+    baseH = ROWS * s;
+    sizeW = baseW;
+    sizeH = baseH;
+    if (fitReset) {
+      zoom = 1;
+      hqZoom = 1;
+    }
+    applyZoomHQ();
+    if (fitReset) {
+      const wrap = $('wallWrap');
+      if (wrap) {
+        const left = Math.max(0, (wrap.offsetWidth - viewport.clientWidth) / 2);
+        const top = Math.max(0, (wrap.offsetHeight - viewport.clientHeight) / 2);
+        viewport.scrollLeft = left;
+        viewport.scrollTop = top;
+      } else {
+        viewport.scrollLeft = 0;
+        viewport.scrollTop = 0;
+      }
+    }
+  }
+
+
+
+
+
+
+
+  function layoutWall() {
+    const wrap = $('wallWrap');
+    const pad = zoom <= 1.02 ? 6 : Math.max(36, Math.round(28 * zoom));
+    // sizeW/sizeH are already at zoom resolution after HQ redraw
+    const w = sizeW;
+    const h = sizeH;
+    if (wrap) {
+      wrap.style.width = Math.ceil(w + pad * 2) + 'px';
+      wrap.style.height = Math.ceil(h + pad * 2) + 'px';
+    }
+    stage.style.left = pad + 'px';
+    stage.style.top = pad + 'px';
+    stage.style.width = w + 'px';
+    stage.style.height = h + 'px';
+    stage.style.transform = 'none';
+    stage.style.margin = '0';
+  }
+
+  function applyZoomSmooth() {
+    // Temporary CSS scale for fluid feel; settle redraw makes it sharp
+    zoom = Math.max(1, Math.min(12, zoom));
+    const pad = zoom <= 1.02 ? 6 : Math.max(36, Math.round(28 * zoom));
+    const wrap = $('wallWrap');
+    const w = baseW * zoom;
+    const h = baseH * zoom;
+    if (wrap) {
+      wrap.style.width = Math.ceil(w + pad * 2) + 'px';
+      wrap.style.height = Math.ceil(h + pad * 2) + 'px';
+    }
+    stage.style.left = pad + 'px';
+    stage.style.top = pad + 'px';
+    stage.style.width = baseW + 'px';
+    stage.style.height = baseH + 'px';
+    stage.style.transformOrigin = '0 0';
+    stage.style.transition = 'none'; // driven by rAF
+    stage.style.transform = 'scale(' + zoom + ')';
+    if ($('zoomLvl')) $('zoomLvl').textContent = Math.round(zoom * 100) + '%';
+  }
+
+  function applyZoomHQ() {
+    zoom = Math.max(1, Math.min(12, zoom));
+    hqZoom = zoom;
+    // Draw at TRUE zoomed resolution — sharp blocks, no blur
+    cell = baseCell * zoom;
+    sizeW = baseW * zoom;
+    sizeH = baseH * zoom;
+    if (!baseW || !baseH) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(sizeW * dpr);
+    canvas.height = Math.round(sizeH * dpr);
+    canvas.style.width = sizeW + 'px';
+    canvas.style.height = sizeH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    layoutWall();
+    if ($('zoomLvl')) $('zoomLvl').textContent = Math.round(zoom * 100) + '%';
+    draw();
+    syncMediaOverlays();
+  }
+
+  function scheduleZoomHQ() {
+    clearTimeout(zoomTimer);
+    zoomTimer = setTimeout(() => applyZoomHQ(), 120);
+  }
+
+  let zoomAnim = null; // { from, to, start, dur, px, py, lx, ly }
+
+  function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  function applyZoomAt(level, px, py, lx, ly) {
+    const prev = zoom;
+    zoom = Math.max(1, Math.min(12, level));
+    applyZoomSmooth();
+    // Keep focus point under cursor / center
+    if (lx != null && ly != null && px != null && py != null) {
+      const srect2 = stage.getBoundingClientRect();
+      viewport.scrollLeft += (srect2.left + lx * zoom) - px;
+      viewport.scrollTop += (srect2.top + ly * zoom) - py;
+    }
+  }
+
+  function tickZoomAnim(now) {
+    if (!zoomAnim) return;
+    const t = Math.min(1, (now - zoomAnim.start) / zoomAnim.dur);
+    const e = easeOutCubic(t);
+    const level = zoomAnim.from + (zoomAnim.to - zoomAnim.from) * e;
+    applyZoomAt(level, zoomAnim.px, zoomAnim.py, zoomAnim.lx, zoomAnim.ly);
+    if (t < 1) {
+      zoomAnim.raf = requestAnimationFrame(tickZoomAnim);
+    } else {
+      zoom = zoomAnim.to;
+      zoomAnim = null;
+      applyZoomHQ();
+    }
+  }
+
+  function bumpZoom(d, clientX, clientY, instant) {
+    const prev = zoomAnim ? zoomAnim.to : zoom;
+    const next = Math.max(1, Math.min(12, prev + d));
+    if (Math.abs(next - prev) < 0.0005) return;
+
+    const vrect = viewport.getBoundingClientRect();
+    const hasPointer = clientX != null && clientY != null && isFinite(clientX) && isFinite(clientY);
+    const px = hasPointer ? clientX : (vrect.left + vrect.width / 2);
+    const py = hasPointer ? clientY : (vrect.top + vrect.height / 2);
+
+    // Local coords relative to current visual zoom
+    const srect = stage.getBoundingClientRect();
+    const curZ = zoom || 1;
+    const lx = (px - srect.left) / curZ;
+    const ly = (py - srect.top) / curZ;
+
+    if (instant) {
+      if (zoomAnim && zoomAnim.raf) cancelAnimationFrame(zoomAnim.raf);
+      zoomAnim = null;
+      applyZoomAt(next, px, py, lx, ly);
+      scheduleZoomHQ();
+      return;
+    }
+
+    // Smooth animated zoom
+    if (zoomAnim && zoomAnim.raf) cancelAnimationFrame(zoomAnim.raf);
+    zoomAnim = {
+      from: zoom,
+      to: next,
+      start: performance.now(),
+      dur: 220,
+      px, py, lx, ly,
+      raf: null
+    };
+    zoomAnim.raf = requestAnimationFrame(tickZoomAnim);
+  }
+
+  function detectMediaType(src, mime) {
+    if (mime) {
+      if (mime.startsWith('video/')) return 'video';
+      if (mime === 'image/gif') return 'gif';
+      return 'image';
+    }
+    const s = (src || '').toLowerCase();
+    if (/\.(mp4|webm|mov|ogg)(\?|$)/.test(s) || s.startsWith('data:video/')) return 'video';
+    if (/\.gif(\?|$)/.test(s) || s.startsWith('data:image/gif')) return 'gif';
+    return 'image';
+  }
+
+  function syncMediaOverlays() {
+    mediaLayer.innerHTML = '';
+    regions.forEach(r => {
+      if (!r.media || r.mediaType === 'image') return;
+      // Only show media on cells this owner still holds
+      let ownsAny = false;
+      for (let c = r.minC; c <= r.maxC && !ownsAny; c++)
+        for (let row = r.minR; row <= r.maxR; row++)
+          if (sold.get(c + ',' + row) === r) { ownsAny = true; break; }
+      if (!ownsAny) return;
+
+      const x = r.minC * cell;
+      const y = r.minR * cell;
+      const w = (r.maxC - r.minC + 1) * cell;
+      const h = (r.maxR - r.minR + 1) * cell;
+      let el;
+      if (r.mediaType === 'video') {
+        el = document.createElement('video');
+        el.src = r.media;
+        el.muted = true;
+        el.loop = true;
+        el.autoplay = true;
+        el.playsInline = true;
+        el.setAttribute('playsinline', '');
+        el.play().catch(() => {});
+      } else {
+        el = document.createElement('img');
+        el.src = r.media;
+        el.alt = r.name || '';
+      }
+      el.className = 'media-item';
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.style.width = w + 'px';
+      el.style.height = h + 'px';
+      el.style.objectFit = r.fit || 'contain';
+      mediaLayer.appendChild(el);
+    });
+  }
+
+  function getImg(src) {
+    if (!src) return null;
+    if (imgCache.has(src)) return imgCache.get(src);
+    const img = new Image();
+    img.decoding = 'async';
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { draw(); };
+    img.onerror = () => {
+      imgCache.delete(src);
+      toast('IMAGE FAILED TO LOAD');
+    };
+    try { img.src = src; } catch (e) { return null; }
+    imgCache.set(src, img);
+    return img;
+  }
+
+  function drawFit(c, img, x, y, w, h, mode) {
+    if (!img || !img.complete || !img.naturalWidth || !img.naturalHeight) return;
+    c.save();
+    c.beginPath();
+    c.rect(x, y, w, h);
+    c.clip();
+    const nw = img.naturalWidth;
+    const nh = img.naturalHeight;
+    let dw, dh, dx, dy;
+    if (mode === 'fill') {
+      dw = w; dh = h; dx = x; dy = y;
+    } else {
+      const ir = nw / nh;
+      const br = w / h;
+      if (mode === 'cover') {
+        if (ir > br) { dh = h; dw = h * ir; }
+        else { dw = w; dh = w / ir; }
+      } else {
+        if (ir > br) { dw = w; dh = w / ir; }
+        else { dh = h; dw = h * ir; }
+      }
+      dx = x + (w - dw) / 2;
+      dy = y + (h - dh) / 2;
+    }
+
+    // High-clarity draw with crisp edges (pixel-wall friendly, not muddy)
+    const maxSide = 1024;
+    let sw = nw, sh = nh;
+    if (sw > maxSide || sh > maxSide) {
+      const sc = maxSide / Math.max(sw, sh);
+      sw = Math.round(sw * sc);
+      sh = Math.round(sh * sc);
+    }
+    const tc = document.createElement('canvas');
+    tc.width = Math.max(1, sw);
+    tc.height = Math.max(1, sh);
+    const tctx = tc.getContext('2d');
+    tctx.imageSmoothingEnabled = true;
+    tctx.imageSmoothingQuality = 'high';
+    tctx.drawImage(img, 0, 0, nw, nh, 0, 0, tc.width, tc.height);
+
+    c.imageSmoothingEnabled = true;
+    c.imageSmoothingQuality = 'high';
+    c.drawImage(tc, 0, 0, tc.width, tc.height, dx, dy, dw, dh);
+
+    // Thin pixel-block frame
+    c.strokeStyle = 'rgba(61, 43, 26, 0.4)';
+    c.lineWidth = 1;
+    c.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    c.restore();
+  }
+
+  function draw() {
+    if (!ctx || !sizeW || !sizeH || !cell) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+
+    // Clean cream wall matching site theme
+    ctx.fillStyle = '#fffdf8';
+    ctx.fillRect(0, 0, sizeW, sizeH);
+
+    const SEC = SECTION;
+    const vis = cell; // cell already includes zoom after HQ redraw
+
+    // Section tint (10×10) — matching warm gray
+    for (let sc = 0; sc < COLS; sc += SEC) {
+      for (let sr = 0; sr < ROWS; sr += SEC) {
+        if (((sc / SEC) + (sr / SEC)) % 2 === 0) {
+          ctx.fillStyle = '#f3ebe0';
+          ctx.fillRect(
+            sc * cell, sr * cell,
+            Math.min(SEC, COLS - sc) * cell,
+            Math.min(SEC, ROWS - sr) * cell
+          );
+        }
+      }
+    }
+
+    // Individual block lines — stronger when zoomed so each block is clear
+    if (vis >= 1.5) {
+      ctx.strokeStyle = vis >= 4 ? 'rgba(139, 90, 43, 0.35)' : 'rgba(139, 90, 43, 0.2)';
+      ctx.lineWidth = 1;
+      const step = vis >= 3 ? 1 : 2;
+      ctx.beginPath();
+      for (let c = 0; c <= COLS; c += step) {
+        const x = Math.floor(c * cell) + 0.5;
+        ctx.moveTo(x, 0); ctx.lineTo(x, sizeH);
+      }
+      for (let r = 0; r <= ROWS; r += step) {
+        const y = Math.floor(r * cell) + 0.5;
+        ctx.moveTo(0, y); ctx.lineTo(sizeW, y);
+      }
+      ctx.stroke();
+    }
+
+    // Major 10×10 section lines — match gold/brown theme
+    ctx.strokeStyle = vis >= 3 ? 'rgba(92, 61, 30, 0.55)' : 'rgba(92, 61, 30, 0.4)';
+    ctx.lineWidth = vis >= 4 ? 2 : 1.5;
+    ctx.beginPath();
+    for (let c = 0; c <= COLS; c += SEC) {
+      const x = Math.floor(c * cell) + 0.5;
+      ctx.moveTo(x, 0); ctx.lineTo(x, sizeH);
+    }
+    for (let r = 0; r <= ROWS; r += SEC) {
+      const y = Math.floor(r * cell) + 0.5;
+      ctx.moveTo(0, y); ctx.lineTo(sizeW, y);
+    }
+    ctx.stroke();
+
+    // Outer frame matching dark brown
+    ctx.strokeStyle = '#3d2b1a';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, sizeW - 2, sizeH - 2);
+
+    // Claimed regions
+    regions.forEach(r => {
+      const x0 = r.minC * cell, y0 = r.minR * cell;
+      const w = (r.maxC - r.minC + 1) * cell;
+      const h = (r.maxR - r.minR + 1) * cell;
+
+      ctx.save();
+      ctx.beginPath();
+      let any = false;
+      for (let c = r.minC; c <= r.maxC; c++) {
+        for (let row = r.minR; row <= r.maxR; row++) {
+          if (sold.get(c + ',' + row) === r) {
+            ctx.rect(c * cell, row * cell, cell, cell);
+            any = true;
+          }
+        }
+      }
+      if (!any) { ctx.restore(); return; }
+      ctx.clip();
+
+      // Rich owned fill
+      ctx.fillStyle = r.color || '#c9a227';
+      ctx.fillRect(x0, y0, w, h);
+      if (r.media && r.mediaType === 'image') {
+        const img = getImg(r.media);
+        if (img?.complete) drawFit(ctx, img, x0, y0, w, h, r.fit || 'contain');
+      } else if (!r.media) {
+        // Decorative owned pixel pattern when no image
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        for (let c = r.minC; c <= r.maxC; c++)
+          for (let row = r.minR; row <= r.maxR; row++)
+            if ((c + row) % 2 === 0)
+              ctx.fillRect(c * cell, row * cell, cell, cell);
+      }
+      // Clean owned edge
+      ctx.strokeStyle = '#3a2a1a';
+      ctx.lineWidth = Math.max(1.5, Math.min(3, cell * 0.2));
+      ctx.strokeRect(x0 + 0.5, y0 + 0.5, w - 1, h - 1);
+      ctx.restore();
+    });
+
+    // Selection on top — clear teal, easy to see
+    if (selected.size) {
+      let sMinC = COLS, sMaxC = -1, sMinR = ROWS, sMaxR = -1;
+      selected.forEach(k => {
+        if (sold.has(k)) return;
+        const [c, r] = k.split(',').map(Number);
+        const x = c * cell, y = r * cell;
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.4)';
+        ctx.fillRect(x, y, cell, cell);
+        sMinC = Math.min(sMinC, c); sMaxC = Math.max(sMaxC, c);
+        sMinR = Math.min(sMinR, r); sMaxR = Math.max(sMaxR, r);
+      });
+      if (sMaxC >= sMinC) {
+        const bx = sMinC * cell;
+        const by = sMinR * cell;
+        const bw = (sMaxC - sMinC + 1) * cell;
+        const bh = (sMaxR - sMinR + 1) * cell;
+        // Outer bold border
+        ctx.strokeStyle = '#047857';
+        ctx.lineWidth = Math.max(2.5, cell * 0.35);
+        ctx.strokeRect(bx + 1, by + 1, bw - 2, bh - 2);
+        // Inner light edge
+        ctx.strokeStyle = '#ecfdf5';
+        ctx.lineWidth = Math.max(1, cell * 0.12);
+        ctx.strokeRect(bx + 3, by + 3, Math.max(0, bw - 6), Math.max(0, bh - 6));
+      }
+    }
+
+    // Dragging preview box
+    if (dragging) {
+      const minC = Math.min(startC, curC), maxC = Math.max(startC, curC);
+      const minR = Math.min(startR, curR), maxR = Math.max(startR, curR);
+      const dx = minC * cell, dy = minR * cell;
+      const dw = (maxC - minC + 1) * cell, dh = (maxR - minR + 1) * cell;
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+      ctx.fillRect(dx, dy, dw, dh);
+      ctx.strokeStyle = '#047857';
+      ctx.lineWidth = Math.max(2, cell * 0.3);
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(dx + 1, dy + 1, dw - 2, dh - 2);
+      ctx.setLineDash([]);
+    }
+
+    // Live preview: show how image will look on selection before claim
+    if (selected.size && pendingMedia && pendingType === 'image') {
+      let minC = COLS, maxC = -1, minR = ROWS, maxR = -1;
+      selected.forEach(k => {
+        if (sold.has(k)) return;
+        const [c, r] = k.split(',').map(Number);
+        minC = Math.min(minC, c); maxC = Math.max(maxC, c);
+        minR = Math.min(minR, r); maxR = Math.max(maxR, r);
+      });
+      if (maxC >= minC) {
+        const x = minC * cell, y = minR * cell;
+        const w = (maxC - minC + 1) * cell, h = (maxR - minR + 1) * cell;
+        const img = getImg(pendingMedia);
+        ctx.save();
+        ctx.globalAlpha = 0.92;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x, y, w, h);
+        if (img?.complete) drawFit(ctx, img, x, y, w, h, fitMode || 'contain');
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = '#1a1512';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+        ctx.restore();
+      }
+    }
+
+    // Clear border on ALL sides (top, right, bottom, left)
+    ctx.strokeStyle = '#1a1512';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(1.5, 1.5, sizeW - 3, sizeH - 3);
+
+    const n = sold.size;
+    $('counterText').textContent = n + '/' + TOTAL;
+    $('progressFill').style.width = (n / TOTAL * 100) + '%';
+  }
+
+  function pos(e) {
+    try {
+      const rect = canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return { c: 0, r: 0 };
+      const cx = e.clientX ?? e.touches?.[0]?.clientX ?? e.changedTouches?.[0]?.clientX;
+      const cy = e.clientY ?? e.touches?.[0]?.clientY ?? e.changedTouches?.[0]?.clientY;
+      if (cx == null || cy == null) return { c: 0, r: 0 };
+      const x = (cx - rect.left) / rect.width;
+      const y = (cy - rect.top) / rect.height;
+      return {
+        c: Math.max(0, Math.min(COLS - 1, Math.floor(x * COLS))),
+        r: Math.max(0, Math.min(ROWS - 1, Math.floor(y * ROWS)))
+      };
+    } catch (err) {
+      return { c: 0, r: 0 };
+    }
+  }
+
+  function purgeSelectedOwned() {
+    const keep = [];
+    selected.forEach(k => { if (!sold.has(k)) keep.push(k); });
+    selected = new Set(keep);
+  }
+
+  function pushSelectHistory() {
+    selectHistory.push(Array.from(selected));
+    if (selectHistory.length > MAX_HISTORY) selectHistory.shift();
+  }
+
+  function undoSelection() {
+    if (!selectHistory.length) { toast('NOTHING TO UNDO'); return; }
+    selected = new Set(selectHistory.pop());
+    purgeSelectedOwned();
+    updateFloat();
+    draw();
+    toast('UNDO');
+  }
+
+  function focusRegion(r) {
+    if (!r) return;
+    const cx = ((r.minC + r.maxC + 1) / 2) * baseCell * zoom;
+    const cy = ((r.minR + r.maxR + 1) / 2) * baseCell * zoom;
+    const pad = zoom <= 1.02 ? 6 : Math.max(36, Math.round(28 * zoom));
+    viewport.scrollLeft = Math.max(0, pad + cx - viewport.clientWidth / 2);
+    viewport.scrollTop = Math.max(0, pad + cy - viewport.clientHeight / 2);
+  }
+
+  function showMyClaims() {
+    if (!regions.length) { toast('NO CLAIMS YET'); return; }
+    const lines = regions.map((r, i) => {
+      const label = (r.name || 'ANON') + ' · ' + (r.pixels || 0) + 'px · ' + left(r);
+      return '<button type="button" class="tool-btn" data-claim="' + i + '" style="display:block;width:100%;margin:6px 0;text-align:left">' + label + '</button>';
+    }).join('');
+    const box = document.createElement('div');
+    box.className = 'overlay';
+    box.style.display = 'flex';
+    box.innerHTML = '<div class="modal" style="max-width:420px"><div class="modal-head"><h3>MY CLAIMS</h3><p>Stored on this browser only</p></div><div class="modal-body">' + lines + '</div><div class="modal-foot"><button type="button" class="btn btn-sec" id="claimsClose">CLOSE</button></div></div>';
+    document.body.appendChild(box);
+    box.querySelector('#claimsClose').onclick = () => box.remove();
+    box.querySelectorAll('[data-claim]').forEach(btn => {
+      btn.onclick = () => {
+        const r = regions[+btn.dataset.claim];
+        focusRegion(r);
+        box.remove();
+        if (devMode) openEdit(r);
+        else toast(r.name || 'CLAIM');
+      };
+    });
+    box.onclick = e => { if (e.target === box) box.remove(); };
+  }
+
+  function applyDrag() {
+    if (!Number.isFinite(startC) || !Number.isFinite(curC)) return;
+    let minC = Math.max(0, Math.min(startC, curC));
+    let maxC = Math.min(COLS - 1, Math.max(startC, curC));
+    let minR = Math.max(0, Math.min(startR, curR));
+    let maxR = Math.min(ROWS - 1, Math.max(startR, curR));
+    if (maxC < minC || maxR < minR) return;
+
+    // Only solid rectangles — shrink box until every cell is free (or empty)
+    let blocked = 0;
+    for (let c = minC; c <= maxC; c++)
+      for (let r = minR; r <= maxR; r++)
+        if (sold.has(c + ',' + r)) blocked++;
+
+    // Cap rectangle size to MAX_BUY by shrinking toward start
+    let w = maxC - minC + 1;
+    let h = maxR - minR + 1;
+    while (w * h > MAX_BUY && (w > 1 || h > 1)) {
+      if (w >= h && maxC > minC) {
+        if (Math.abs(maxC - startC) >= Math.abs(minC - startC)) maxC--;
+        else minC++;
+        w = maxC - minC + 1;
+      } else if (maxR > minR) {
+        if (Math.abs(maxR - startR) >= Math.abs(minR - startR)) maxR--;
+        else minR++;
+        h = maxR - minR + 1;
+      } else break;
+    }
+
+    const next = new Set();
+    blocked = 0;
+    for (let c = minC; c <= maxC; c++) {
+      for (let r = minR; r <= maxR; r++) {
+        const k = c + ',' + r;
+        if (sold.has(k)) { blocked++; continue; }
+        next.add(k);
+      }
+    }
+    // If any owned inside, selection is not a solid free rectangle — still show free cells but warn
+    selected = next;
+    if (blocked > 0 && tip) {
+      tip.style.display = 'block';
+      tip.innerHTML = '<strong>RECTANGLE</strong>contains ' + blocked + ' owned — pick a free area';
+    } else if (w * h >= MAX_BUY && tip) {
+      tip.style.display = 'block';
+      tip.innerHTML = '<strong>MAX ' + MAX_BUY + '</strong>blocks per purchase';
+    }
+    try { draw(); } catch (err) { console.warn(err); }
+    try { updateFloat(); } catch (err) { console.warn(err); }
+  }
+
+  function updateFloat() {
+    purgeSelectedOwned();
+    const n = selected.size;
+    if (n > 0) {
+      $('selCount').textContent = n + (n < MIN_BUY ? ' (min ' + MIN_BUY + ')' : n > MAX_BUY ? ' (max ' + MAX_BUY + ')' : '');
+      $('selPrice').textContent = '$' + (n * price()).toFixed(2);
+      floatBar.classList.add('visible');
+    } else {
+      floatBar.classList.remove('visible');
+    }
+  }
+
+  function onDown(e) {
+    if (spaceHeld || toolMode === 'drag' || (e.button != null && e.button !== 0)) return;
+    const p = pos(e);
+    const key = p.c + ',' + p.r;
+    if (sold.has(key)) {
+      dragging = false;
+      didDrag = false;
+      const owner = sold.get(key);
+      if (tip) {
+        tip.style.display = 'block';
+        tip.innerHTML = '<strong>' + (owner.name || 'OWNED') + ' — LOCKED</strong>' +
+          (owner.desc ? owner.desc + '<br>' : '') + 'Not for sale · ' + left(owner);
+      }
+      toast('ALREADY OWNED — CANNOT BUY');
+      return;
+    }
+    dragging = true;
+    didDrag = false;
+    startC = curC = p.c;
+    startR = curR = p.r;
+    // Only rectangular selection — always replace with current box
+    additiveSelect = false;
+    deselect = false;
+    dragBaseline = new Set();
+    selected = new Set();
+    applyDrag();
+  }
+
+  function onMove(e) {
+    const cx = e.clientX ?? e.touches?.[0]?.clientX;
+    const cy = e.clientY ?? e.touches?.[0]?.clientY;
+    if (!dragging) {
+      try {
+        const p = pos(e);
+        const r = sold.get(p.c + ',' + p.r);
+        if (r && tip) {
+          tip.innerHTML = '<strong>' + (r.name || 'OWNED') + '</strong>' +
+            (r.desc ? r.desc + '<br>' : '') + left(r) + ' · ' + (r.pixels || 0) + ' PX' +
+            (r.link ? '<br><em>TAP → OPEN LINK</em>' : '') +
+            (devMode ? '<br><em>DEV: TAP → EDIT</em>' : '');
+          tip.style.display = 'block';
+          tip.style.left = (e.pageX || cx || 0) + 12 + 'px';
+          tip.style.top = (e.pageY || cy || 0) - 8 + 'px';
+        } else if (tip) {
+          tip.style.display = 'none';
+        }
+      } catch (err) {}
+      return;
+    }
+    const p = pos(e);
+    if (p.c !== curC || p.r !== curR) didDrag = true;
+    curC = p.c;
+    curR = p.r;
+    applyDrag();
+  }
+
+  function onUp() {
+    if (!dragging) return;
+    dragging = false;
+    if (selected.size) pushSelectHistory();
+    try { updateFloat(); } catch (err) {}
+    try { draw(); } catch (err) {}
+  }
+
+  canvas.addEventListener('mousedown', onDown);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+  canvas.addEventListener('touchstart', e => { onDown(e); e.preventDefault(); }, { passive: false });
+  window.addEventListener('touchmove', e => { onMove(e); if (dragging) e.preventDefault(); }, { passive: false });
+  window.addEventListener('touchend', onUp);
+  canvas.addEventListener('mouseleave', () => tip.style.display = 'none');
+  canvas.addEventListener('click', e => {
+    // Ignore click that ends a drag-select (second select used to break here)
+    if (dragging || didDrag) {
+      didDrag = false;
+      return;
+    }
+    const p = pos(e);
+    const r = sold.get(p.c + ',' + p.r);
+    if (!r) return;
+    if (devMode) {
+      try { openEdit(r); } catch (err) { toast('EDIT FAILED'); console.warn(err); }
+      return;
+    }
+    if (r.link) {
+      window.open(r.link, '_blank', 'noopener,noreferrer');
+    } else {
+      toast('NO LINK ON THIS CLAIM');
+    }
+  });
+
+  // Double-click → select the whole 10×10 big block
+  function selectBigBlock(c, r, additive) {
+    const sc = Math.floor(c / SECTION) * SECTION;
+    const sr = Math.floor(r / SECTION) * SECTION;
+    const maxC = Math.min(COLS, sc + SECTION) - 1;
+    const maxR = Math.min(ROWS, sr + SECTION) - 1;
+    if (!additive) selected = new Set();
+    let blocked = 0, added = 0;
+    for (let cc = sc; cc <= maxC; cc++) {
+      for (let rr = sr; rr <= maxR; rr++) {
+        const k = cc + ',' + rr;
+        if (sold.has(k)) { blocked++; continue; }
+        if (selected.size >= MAX_BUY) continue;
+        selected.add(k);
+        added++;
+      }
+    }
+    if (added > 0) pushSelectHistory();
+    updateFloat();
+    draw();
+    if (added === 0) toast('BIG BLOCK FULLY OWNED');
+    else if (selected.size >= MAX_BUY) toast('MAX ' + MAX_BUY + ' BLOCKS · ' + added + ' ADDED');
+    else if (blocked > 0) toast('BIG BLOCK · ' + added + ' FREE · ' + blocked + ' LOCKED');
+    else toast('BIG BLOCK SELECTED · ' + added + ' PX');
+  }
+
+  canvas.addEventListener('dblclick', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (toolMode === 'drag' || spaceHeld) return;
+    const p = pos(e);
+    // If owned and not dev, still select free cells in that section
+    selectBigBlock(p.c, p.r, !!e.shiftKey);
+    didDrag = true; // suppress following click
+  });
+
+  $('clearBtn').onclick = () => {
+    if (selected.size) pushSelectHistory();
+    selected.clear();
+    updateFloat();
+    draw();
+  };
+
+  $('exportBtn').onclick = () => {
+    const ex = document.createElement('canvas');
+    const s = 2;
+    ex.width = sizeW * s;
+    ex.height = sizeH * s;
+    const ectx = ex.getContext('2d');
+    ectx.imageSmoothingEnabled = true;
+    ectx.imageSmoothingQuality = 'high';
+    ectx.scale(s, s);
+    ectx.fillStyle = '#ffffff';
+    ectx.fillRect(0, 0, sizeW, sizeH);
+    regions.forEach(r => {
+      const x = r.minC * cell, y = r.minR * cell;
+      const w = (r.maxC - r.minC + 1) * cell, h = (r.maxR - r.minR + 1) * cell;
+      ectx.save();
+      ectx.beginPath();
+      let any = false;
+      for (let c = r.minC; c <= r.maxC; c++) {
+        for (let row = r.minR; row <= r.maxR; row++) {
+          if (sold.get(c + ',' + row) === r) {
+            ectx.rect(c * cell, row * cell, cell, cell);
+            any = true;
+          }
+        }
+      }
+      if (!any) { ectx.restore(); return; }
+      ectx.clip();
+      ectx.fillStyle = r.color || '#c99b3c';
+      ectx.fillRect(x, y, w, h);
+      if (r.media && r.mediaType === 'image') {
+        const img = getImg(r.media);
+        if (img?.complete) drawFit(ectx, img, x, y, w, h, r.fit || 'contain');
+      }
+      ectx.restore();
+    });
+    const a = document.createElement('a');
+    a.download = 'pixel-wall.png';
+    a.href = ex.toDataURL('image/png');
+    a.click();
+    toast('EXPORTED');
+  };
+
+
+  function updatePayTotal() {
+    const n = selected.size;
+    const total = (n * price()).toFixed(2);
+    $('infoPixels').value = n + ' PIXELS';
+    $('infoPrice').value = '$' + total;
+    if ($('payTotalLine')) $('payTotalLine').textContent = 'TOTAL: $' + total;
+  }
+
+
+  function openEdit(r) {
+    if (!r) return;
+    editingRegion = r;
+    const setVal = (id, v) => { const el = $(id); if (el) el.value = v; };
+    setVal('ownerName', r.name || '');
+    setVal('desc', r.desc || '');
+    const dur = $('duration');
+    if (dur) {
+      dur.value = r.duration === '1day' ? '1day' : (r.duration === 'permanent' ? 'permanent' : 'daily');
+      dur.disabled = true;
+    }
+    if (r.media) setPending(r.media, r.mediaType || 'image');
+    else clearPending();
+    fitMode = r.fit || 'contain';
+    document.querySelectorAll('.fit-btn').forEach(b => {
+      if (b.dataset.fit) b.classList.toggle('active', b.dataset.fit === fitMode);
+    });
+    const lt = $('linkType');
+    if (lt) lt.value = r.linkType || 'none';
+    const link = $('link');
+    if (link) {
+      if (r.linkType && r.linkType !== 'none') {
+        link.style.display = 'block';
+        link.value = r.link || '';
+      } else {
+        link.style.display = 'none';
+        link.value = '';
+      }
+    }
+    setVal('infoPixels', (r.pixels || 0) + ' PIXELS (OWNED)');
+    setVal('infoPrice', 'EDIT MODE');
+    if ($('payTotalLine')) $('payTotalLine').textContent = 'SAVE CHANGES — NO NEW CHARGE';
+    const payField = $('payMethods') && $('payMethods').closest('.field');
+    if (payField) payField.style.display = 'none';
+    if ($('confirmBtn')) {
+      $('confirmBtn').textContent = 'SAVE CHANGES';
+      $('confirmBtn').disabled = false;
+    }
+    const head = document.querySelector('#claimModal .modal-head h3');
+    if (head) head.textContent = 'EDIT YOUR PIXELS';
+    const sub = document.querySelector('#claimModal .modal-head p');
+    if (sub) sub.textContent = 'Update image, name, description or link. Ownership stays yours.';
+    if ($('claimModal')) $('claimModal').style.display = 'flex';
+  }
+
+  function closeClaimModal() {
+    $('claimModal').style.display = 'none';
+    document.body.style.overflow = '';
+    editingRegion = null;
+    $('duration').disabled = false;
+    const payField = $('payMethods') && $('payMethods').closest('.field');
+    if (payField) payField.style.display = '';
+    $('confirmBtn').textContent = 'PAY & CLAIM';
+    const head = document.querySelector('#claimModal .modal-head h3');
+    if (head) head.textContent = 'CLAIM PIXELS';
+    const sub = document.querySelector('#claimModal .modal-head p');
+    if (sub) sub.textContent = 'Once paid, your pixels stay locked until time runs out.';
+    if ($('payTotalLine')) updatePayTotal();
+  }
+
+  function isSolidRectangle(keys) {
+    if (!keys.length) return false;
+    let minC = COLS, maxC = -1, minR = ROWS, maxR = -1;
+    const set = new Set(keys);
+    keys.forEach(k => {
+      const [c, r] = k.split(',').map(Number);
+      minC = Math.min(minC, c); maxC = Math.max(maxC, c);
+      minR = Math.min(minR, r); maxR = Math.max(maxR, r);
+    });
+    const need = (maxC - minC + 1) * (maxR - minR + 1);
+    if (need !== keys.length) return false;
+    for (let c = minC; c <= maxC; c++)
+      for (let r = minR; r <= maxR; r++)
+        if (!set.has(c + ',' + r) || sold.has(c + ',' + r)) return false;
+    return true;
+  }
+
+  $('claimBtn').onclick = () => {
+    purgeSelectedOwned();
+    if (!selected.size) {
+      toast('NO FREE PIXELS SELECTED');
+      updateFloat();
+      return;
+    }
+    if (selected.size < MIN_BUY) {
+      toast('MINIMUM ' + MIN_BUY + ' BLOCKS');
+      return;
+    }
+    if (selected.size > MAX_BUY) {
+      toast('MAXIMUM ' + MAX_BUY + ' BLOCKS');
+      return;
+    }
+    if (!isSolidRectangle(Array.from(selected))) {
+      toast('SELECT A SOLID RECTANGLE ONLY');
+      return;
+    }
+    // Abort if any selected cell became owned
+    for (const k of selected) {
+      if (sold.has(k)) {
+        toast('SELECTION INCLUDES OWNED PIXELS');
+        purgeSelectedOwned();
+        updateFloat();
+        draw();
+        return;
+      }
+    }
+    updatePayTotal();
+    $('confirmBtn').disabled = false;
+    $('confirmBtn').textContent = 'PAY & CLAIM';
+    $('claimModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  };
+  $('cancelBtn').onclick = () => {
+    closeClaimModal();
+    $('confirmBtn').disabled = false;
+  };
+  $('duration').onchange = () => { updateFloat(); updatePayTotal(); };
+
+  const upload = $('upload');
+  const previewImg = $('preview');
+  const previewVideo = $('previewVideo');
+
+  function setPending(src, type) {
+    if (!src) return;
+    pendingMedia = src;
+    pendingType = type || detectMediaType(src);
+    upload.classList.add('has');
+    $('fitRow').style.display = 'flex';
+    draw(); // live wall preview
+    if (pendingType === 'video') {
+      previewImg.style.display = 'none';
+      previewImg.removeAttribute('src');
+      previewVideo.style.display = 'block';
+      previewVideo.src = src;
+      previewVideo.play().catch(() => {});
+    } else {
+      previewVideo.pause();
+      previewVideo.style.display = 'none';
+      previewVideo.removeAttribute('src');
+      previewImg.style.display = 'block';
+      previewImg.onerror = () => toast('PREVIEW FAILED — TRY ANOTHER FILE');
+      previewImg.src = src;
+    }
+  }
+
+  function clearPending() {
+    pendingMedia = '';
+    pendingType = 'image';
+    upload.classList.remove('has');
+    $('fitRow').style.display = 'none';
+    previewImg.removeAttribute('src');
+    previewImg.style.display = 'none';
+    previewVideo.pause();
+    previewVideo.style.display = 'none';
+    previewVideo.removeAttribute('src');
+    $('file').value = '';
+    $('imgUrl').value = '';
+  }
+
+  // Resize large images so they stay sharp but save cleanly (no storage errors)
+  function optimizeImageFile(file) {
+    return new Promise((resolve, reject) => {
+      const type = file.type || '';
+      // Keep GIFs as-is so animation is preserved
+      if (type === 'image/gif') {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = () => reject(new Error('read'));
+        reader.readAsDataURL(file);
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const maxSide = 1600;
+          let w = img.naturalWidth || img.width;
+          let h = img.naturalHeight || img.height;
+          if (!w || !h) {
+            URL.revokeObjectURL(url);
+            reject(new Error('bad image'));
+            return;
+          }
+          if (w > maxSide || h > maxSide) {
+            const scale = maxSide / Math.max(w, h);
+            w = Math.round(w * scale);
+            h = Math.round(h * scale);
+          }
+          const c = document.createElement('canvas');
+          c.width = w;
+          c.height = h;
+          const cx = c.getContext('2d');
+          cx.imageSmoothingEnabled = true;
+          cx.imageSmoothingQuality = 'high';
+          cx.drawImage(img, 0, 0, w, h);
+          // Prefer PNG for logos with transparency; JPEG for photos
+          const hasAlpha = type === 'image/png' || type === 'image/webp';
+          const out = hasAlpha
+            ? c.toDataURL('image/png')
+            : c.toDataURL('image/jpeg', 0.92);
+          URL.revokeObjectURL(url);
+          resolve(out);
+        } catch (err) {
+          URL.revokeObjectURL(url);
+          reject(err);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('decode'));
+      };
+      img.src = url;
+    });
+  }
+
+  function handleFile(f) {
+    if (!f) return;
+    const type = f.type || '';
+    const name = (f.name || '').toLowerCase();
+    const isVideo = type.startsWith('video/') || /\.(mp4|webm|mov|ogg)$/.test(name);
+    const isImage = type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp)$/.test(name);
+    if (!isVideo && !isImage) {
+      toast('USE PNG, JPG, GIF, WEBP, OR VIDEO');
+      return;
+    }
+    if (/heic|heif/i.test(type) || /\.(heic|heif)$/.test(name)) {
+      toast('HEIC NOT SUPPORTED — USE JPG OR PNG');
+      return;
+    }
+    if (f.size > 30 * 1024 * 1024) {
+      toast('FILE TOO LARGE (MAX 30MB)');
+      return;
+    }
+    toast(isVideo ? 'LOADING VIDEO...' : 'OPTIMIZING IMAGE...');
+    if (isVideo) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        setPending(e.target.result, 'video');
+        toast('VIDEO READY');
+      };
+      reader.onerror = () => toast('VIDEO READ FAILED');
+      reader.readAsDataURL(f);
+      return;
+    }
+    optimizeImageFile(f)
+      .then(dataUrl => {
+        const mediaType = (type === 'image/gif' || name.endsWith('.gif')) ? 'gif' : 'image';
+        setPending(dataUrl, mediaType);
+        toast('IMAGE READY');
+      })
+      .catch(() => {
+        // Fallback: raw data URL
+        const reader = new FileReader();
+        reader.onload = e => {
+          setPending(e.target.result, detectMediaType(e.target.result, type));
+          toast('IMAGE READY');
+        };
+        reader.onerror = () => toast('IMAGE FAILED — TRY JPG/PNG');
+        reader.readAsDataURL(f);
+      });
+  }
+
+  $('file').onchange = () => handleFile($('file').files[0]);
+  upload.onclick = e => {
+    if (e.target.closest('video') || e.target.closest('img')) return;
+    $('file').click();
+  };
+  upload.addEventListener('dragover', e => { e.preventDefault(); upload.classList.add('drag'); });
+  upload.addEventListener('dragleave', () => upload.classList.remove('drag'));
+  upload.addEventListener('drop', e => {
+    e.preventDefault();
+    upload.classList.remove('drag');
+    handleFile(e.dataTransfer.files[0]);
+  });
+  $('imgUrl').oninput = () => {
+    const v = $('imgUrl').value.trim();
+    if (v) setPending(v, detectMediaType(v));
+    else clearPending();
+  };
+  document.querySelectorAll('.fit-btn').forEach(b => {
+    b.onclick = () => {
+      if (b.dataset.pay) return; // pay buttons share class in some builds
+      if (!b.dataset.fit) return;
+      fitMode = b.dataset.fit;
+      document.querySelectorAll('.fit-btn').forEach(x => {
+        if (x.dataset.fit) x.classList.toggle('active', x === b);
+      });
+      draw();
+    };
+  });
+
+  function buildLink() {
+    const type = $('linkType').value;
+    let val = $('link').value.trim();
+    if (type === 'none' || !val) return '';
+    // Full profile OR post URL — keep as-is
+    if (/^https?:\/\//i.test(val)) return val;
+    val = val.replace(/^@/, '');
+    const map = {
+      instagram: 'https://instagram.com/',
+      tiktok: 'https://www.tiktok.com/@',
+      youtube: 'https://youtube.com/@',
+      twitter: 'https://x.com/',
+      website: 'https://',
+      other: ''
+    };
+    const prefix = map[type] || '';
+    if (type === 'other') return val;
+    if (type === 'website' && !val.includes('.')) return '';
+    return prefix + val;
+  }
+
+  $('linkType').onchange = () => {
+    const t = $('linkType').value;
+    const input = $('link');
+    if (t === 'none') {
+      input.style.display = 'none';
+      input.value = '';
+      return;
+    }
+    input.style.display = 'block';
+    const placeholders = {
+      instagram: 'profile or post URL / @user',
+      tiktok: 'profile or video URL / @user',
+      youtube: 'channel or video URL / @user',
+      twitter: 'profile or post URL / @user',
+      website: 'yoursite.com',
+      other: 'any URL'
+    };
+    input.placeholder = placeholders[t] || 'profile, post, or URL';
+  };
+
+  // Payment method UI
+  let payMethod = 'card';
+  let editingRegion = null;
+  let paying = false;
+
+  document.querySelectorAll('.pay-btn').forEach(b => {
+    b.onclick = () => {
+      if (paying) return;
+      payMethod = b.dataset.pay;
+      document.querySelectorAll('.pay-btn').forEach(x => x.classList.toggle('active', x === b));
+      const cardFields = $('payCardFields');
+      const altFields = $('payAltFields');
+      const hint = $('payHint');
+      if (payMethod === 'card') {
+        cardFields.style.display = 'block';
+        altFields.style.display = 'none';
+        hint.textContent = 'Enter card details to complete payment.';
+      } else if (payMethod === 'paypal') {
+        cardFields.style.display = 'none';
+        altFields.style.display = 'block';
+        $('payEmail').placeholder = 'PayPal email';
+        hint.textContent = 'Pay with PayPal — enter your email to continue.';
+      } else {
+        cardFields.style.display = 'none';
+        altFields.style.display = 'block';
+        $('payEmail').placeholder = 'Wallet email / ID';
+        hint.textContent = 'Crypto checkout — enter wallet email or ID.';
+      }
+    };
+  });
+
+  // Card number formatting
+  $('cardNumber').addEventListener('input', e => {
+    let v = e.target.value.replace(/\D/g, '').slice(0, 16);
+    e.target.value = v.replace(/(.{4})/g, '$1 ').trim();
+  });
+  $('cardExp').addEventListener('input', e => {
+    let v = e.target.value.replace(/\D/g, '').slice(0, 4);
+    if (v.length >= 3) v = v.slice(0, 2) + '/' + v.slice(2);
+    e.target.value = v;
+  });
+
+  function validatePayment() {
+    if (payMethod === 'card') {
+      const name = ($('cardName').value || '').trim();
+      const num = ($('cardNumber').value || '').replace(/\s/g, '');
+      const exp = ($('cardExp').value || '').trim();
+      const cvv = ($('cardCvv').value || '').trim();
+      if (name.length < 2) { toast('ENTER NAME ON CARD'); return false; }
+      if (num.length < 13) { toast('ENTER VALID CARD NUMBER'); return false; }
+      if (!/^\d{2}\/\d{2}$/.test(exp)) { toast('ENTER EXPIRY MM/YY'); return false; }
+      if (cvv.length < 3) { toast('ENTER CVV'); return false; }
+      return true;
+    }
+    const email = ($('payEmail').value || '').trim();
+    if (!email || email.length < 5) {
+      toast(payMethod === 'paypal' ? 'ENTER PAYPAL EMAIL' : 'ENTER WALLET ID');
+      return false;
+    }
+    return true;
+  }
+
+  function finalizeClaim() {
+    // STRICT: if any selected pixel is already owned, cancel the whole purchase
+    const keys = Array.from(selected);
+    for (const k of keys) {
+      if (sold.has(k)) {
+        toast('BLOCK OWNED — PURCHASE CANCELLED');
+        paying = false;
+        $('confirmBtn').disabled = false;
+        $('confirmBtn').textContent = 'PAY & CLAIM';
+        $('claimModal').style.display = 'none';
+        purgeSelectedOwned();
+        updateFloat();
+        draw();
+        return;
+      }
+    }
+    if (keys.length === 0) {
+      toast('NO FREE PIXELS SELECTED');
+      paying = false;
+      $('confirmBtn').disabled = false;
+      $('confirmBtn').textContent = 'PAY & CLAIM';
+      return;
+    }
+
+    let minC = COLS, maxC = -1, minR = ROWS, maxR = -1;
+    keys.forEach(k => {
+      const [c, r] = k.split(',').map(Number);
+      minC = Math.min(minC, c); maxC = Math.max(maxC, c);
+      minR = Math.min(minR, r); maxR = Math.max(maxR, r);
+    });
+    const total = keys.length * price();
+    const region = {
+      name: $('ownerName').value.trim() || 'ANON',
+      desc: $('desc').value.trim().slice(0, 120),
+      color: '#4472c4',
+      media: pendingMedia,
+      mediaType: pendingType,
+      fit: fitMode,
+      link: buildLink(),
+      linkType: $('linkType').value,
+      duration: $('duration').value,
+      payMethod: payMethod,
+      paid: total,
+      claimedAt: Date.now(),
+      minC, maxC, minR, maxR,
+      pixels: keys.length,
+      cells: keys.slice() // exact cells owned by this claim
+    };
+
+    // Lock every cell to this owner only (never overwrite)
+    for (const k of keys) {
+      if (sold.has(k)) {
+        // Race safety: abort and roll back this claim's locks
+        keys.forEach(x => { if (sold.get(x) === region) sold.delete(x); });
+        toast('BLOCK OWNED — PURCHASE CANCELLED');
+        paying = false;
+        $('confirmBtn').disabled = false;
+        $('confirmBtn').textContent = 'PAY & CLAIM';
+        return;
+      }
+      sold.set(k, region);
+    }
+        regions.push(region);
+    fetch('/api/claim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cells: keys,
+        name: region.name,
+        desc: region.desc,
+        media: region.media,
+        mediaType: region.mediaType,
+        fit: region.fit,
+        link: region.link,
+        linkType: region.linkType,
+        duration: region.duration,
+        paid: region.paid
+      })
+    }).catch(() => {});
+    selected.clear();
+    $('ownerName').value = '';
+    $('desc').value = '';
+    $('link').value = '';
+    $('linkType').value = 'none';
+    $('link').style.display = 'none';
+    $('cardName').value = '';
+    $('cardNumber').value = '';
+    $('cardExp').value = '';
+    $('cardCvv').value = '';
+    $('payEmail').value = '';
+    clearPending();
+    $('claimModal').style.display = 'none';
+    floatBar.classList.remove('visible');
+    paying = false;
+    $('confirmBtn').disabled = false;
+    $('confirmBtn').textContent = 'PAY & CLAIM';
+    save();
+    draw();
+    syncMediaOverlays();
+    toast('PAID $' + total.toFixed(2) + ' · SOLD BY ' + region.name.toUpperCase());
+  }
+
+  $('confirmBtn').onclick = () => {
+    // Edit existing claim — no payment
+    if (editingRegion) {
+      const er = editingRegion;
+      er.name = $('ownerName').value.trim() || er.name || 'ANON';
+      er.desc = $('desc').value.trim().slice(0, 120);
+      er.media = pendingMedia;
+      er.mediaType = pendingType;
+      er.fit = fitMode;
+      er.link = buildLink();
+      er.linkType = $('linkType').value;
+      save();
+      draw();
+      syncMediaOverlays();
+      clearPending();
+      closeClaimModal();
+      toast('UPDATED — ' + (er.name || 'ANON').toUpperCase());
+      return;
+    }
+    if (paying || !selected.size) return;
+    if (selected.size < MIN_BUY || selected.size > MAX_BUY) {
+      toast('NEED ' + MIN_BUY + '–' + MAX_BUY + ' BLOCKS');
+      return;
+    }
+    if (!isSolidRectangle(Array.from(selected))) {
+      toast('SELECT A SOLID RECTANGLE ONLY');
+      return;
+    }
+    const nm = ($('ownerName').value || '').trim();
+    if (!nm) { toast('ENTER OWNER NAME'); return; }
+    if (!pendingMedia) { toast('ADD AN IMAGE OR VIDEO'); return; }
+    if (!validatePayment()) return;
+
+    paying = true;
+    const btn = $('confirmBtn');
+    btn.disabled = true;
+    btn.textContent = 'PROCESSING...';
+    $('payHint').textContent = 'Processing payment… please wait.';
+
+    // Simulate full checkout steps
+    setTimeout(() => {
+      btn.textContent = 'CONFIRMING...';
+      $('payHint').textContent = 'Confirming with ' + payMethod.toUpperCase() + '…';
+      setTimeout(() => {
+        btn.textContent = 'SUCCESS';
+        $('payHint').textContent = 'Payment successful! Placing your pixels…';
+        setTimeout(finalizeClaim, 500);
+      }, 700);
+    }, 900);
+  };
+
+  window.addEventListener('keydown', e => {
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+    const panStep = 48;
+    if (e.key === 'Escape') {
+      if ($('claimModal') && $('claimModal').style.display === 'flex') {
+        closeClaimModal();
+        return;
+      }
+      if (selected.size) pushSelectHistory();
+      selected.clear();
+      updateFloat();
+      draw();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+      e.preventDefault();
+      undoSelection();
+      return;
+    }
+    if (e.key === '+' || e.key === '=') { e.preventDefault(); bumpZoom(0.25, lastMouseX, lastMouseY); return; }
+    if (e.key === '-' || e.key === '_') { e.preventDefault(); bumpZoom(-0.25, lastMouseX, lastMouseY); return; }
+    if (e.key === '0') { e.preventDefault(); resize(true); return; }
+    if (e.key === 'Enter' && selected.size >= MIN_BUY) {
+      e.preventDefault();
+      $('claimBtn').click();
+      return;
+    }
+    if (e.key === 'ArrowLeft') { viewport.scrollLeft -= panStep; e.preventDefault(); }
+    if (e.key === 'ArrowRight') { viewport.scrollLeft += panStep; e.preventDefault(); }
+    if (e.key === 'ArrowUp') { viewport.scrollTop -= panStep; e.preventDefault(); }
+    if (e.key === 'ArrowDown') { viewport.scrollTop += panStep; e.preventDefault(); }
+  });
+
+  $('willow').onclick = () => {
+    const q = quotes[Math.floor(Math.random() * quotes.length)];
+    $('motTitle').textContent = q.t;
+    $('motText').textContent = q.x;
+    $('motModal').style.display = 'flex';
+  };
+  $('motClose').onclick = () => $('motModal').style.display = 'none';
+
+  setInterval(() => {
+    let changed = false;
+    const keep = [];
+    regions.forEach(r => {
+      if (expired(r)) {
+        for (let c = r.minC; c <= r.maxC; c++)
+          for (let row = r.minR; row <= r.maxR; row++)
+            sold.delete(c + ',' + row);
+        changed = true;
+      } else keep.push(r);
+    });
+    if (changed) {
+      regions = keep;
+      save();
+      draw();
+      syncMediaOverlays();
+      toast('SOME CLAIMS EXPIRED');
+    }
+  }, 30000);
+
+  setInterval(() => {
+    let v = parseInt($('viewerCount').textContent) || 27842;
+    v += Math.floor(Math.random() * 5) - 2;
+    if (v < 25000) v = 27842;
+    $('viewerCount').textContent = v;
+  }, 3000);
+
+  if ($('helpBtn')) $('helpBtn').onclick = () => { $('helpModal').style.display = 'flex'; };
+  if ($('helpClose')) $('helpClose').onclick = () => { $('helpModal').style.display = 'none'; };
+
+  
+  // Zoom — smooth CSS while moving, sharp redraw when settled (image quality kept)
+
+  // Tools: SELECT (pixels) or DRAG (move wall)
+  function setTool(mode) {
+    toolMode = mode;
+    const sel = $('toolSelect');
+    const drag = $('toolDrag');
+    if (sel) sel.classList.toggle('tool-active', mode === 'select');
+    if (drag) drag.classList.toggle('tool-active', mode === 'drag');
+    viewport.classList.toggle('drag-mode', mode === 'drag');
+    if (mode === 'drag') toast('DRAG MODE — drag to move');
+    else toast('SELECT MODE — drag to select pixels');
+  }
+  if ($('toolSelect')) $('toolSelect').onclick = () => setTool('select');
+  if ($('toolDrag')) $('toolDrag').onclick = () => setTool('drag');
+  if ($('toolDev')) $('toolDev').onclick = () => {
+    devMode = !devMode;
+    $('toolDev').classList.toggle('tool-active', devMode);
+    toast(devMode ? 'DEV ON — TAP CLAIM TO EDIT' : 'DEV OFF — TAP OPENS LINK');
+  };
+  if ($('toolUndo')) $('toolUndo').onclick = () => undoSelection();
+  if ($('toolClaims')) $('toolClaims').onclick = () => showMyClaims();
+
+  window.addEventListener('keydown', e => {
+    if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      spaceHeld = true;
+      viewport.classList.add('panning');
+    }
+    if (e.key === 'v' || e.key === 'V') setTool('select');
+    if (e.key === 'h' || e.key === 'H') setTool('drag');
+  });
+  window.addEventListener('keyup', e => {
+    if (e.code === 'Space') {
+      spaceHeld = false;
+      if (!panning) viewport.classList.remove('panning');
+    }
+  });
+
+  // ===== Pan gestures + inertia physics =====
+  let panVX = 0, panVY = 0, panInertiaRaf = null, panLastT = 0;
+  let touchPan = false;
+  let lastPinch = 0, pinchMidX = 0, pinchMidY = 0;
+  // Recent velocity samples for stable throw (px/ms)
+  const panSamples = [];
+  const PAN_FRICTION = 0.0028;   // per ms exponential-ish drag
+  const PAN_STOP = 0.02;         // px/ms cutoff
+  const PAN_MAX_V = 3.5;         // px/ms cap
+  const PAN_BOUNCE = 0.35;       // edge restitution
+
+  function stopPanInertia() {
+    if (panInertiaRaf) {
+      cancelAnimationFrame(panInertiaRaf);
+      panInertiaRaf = null;
+    }
+    panVX = 0;
+    panVY = 0;
+    panSamples.length = 0;
+  }
+
+  function clampScroll() {
+    const maxX = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+    const maxY = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+    let bounced = false;
+    if (viewport.scrollLeft < 0) { viewport.scrollLeft = 0; panVX = Math.abs(panVX) * PAN_BOUNCE; bounced = true; }
+    else if (viewport.scrollLeft > maxX) { viewport.scrollLeft = maxX; panVX = -Math.abs(panVX) * PAN_BOUNCE; bounced = true; }
+    if (viewport.scrollTop < 0) { viewport.scrollTop = 0; panVY = Math.abs(panVY) * PAN_BOUNCE; bounced = true; }
+    else if (viewport.scrollTop > maxY) { viewport.scrollTop = maxY; panVY = -Math.abs(panVY) * PAN_BOUNCE; bounced = true; }
+    return bounced;
+  }
+
+  function runPanInertia(now) {
+    if (!panLastT) panLastT = now;
+    let dt = now - panLastT;
+    panLastT = now;
+    if (dt < 1) dt = 1;
+    if (dt > 48) dt = 48;
+
+    // Exponential friction: v *= e^(-k*dt)
+    const decay = Math.exp(-PAN_FRICTION * dt);
+    panVX *= decay;
+    panVY *= decay;
+
+    const speed = Math.hypot(panVX, panVY);
+    if (speed < PAN_STOP) {
+      stopPanInertia();
+      return;
+    }
+
+    viewport.scrollLeft -= panVX * dt;
+    viewport.scrollTop -= panVY * dt;
+    clampScroll();
+
+    panInertiaRaf = requestAnimationFrame(runPanInertia);
+  }
+
+  function sampleVelocity(dx, dy, dt) {
+    if (dt < 1) dt = 1;
+    const vx = dx / dt;
+    const vy = dy / dt;
+    panSamples.push({ vx, vy, t: performance.now() });
+    // keep ~100ms of samples
+    const cutoff = performance.now() - 100;
+    while (panSamples.length && panSamples[0].t < cutoff) panSamples.shift();
+  }
+
+  function velocityFromSamples() {
+    if (!panSamples.length) return { vx: 0, vy: 0 };
+    let sx = 0, sy = 0, w = 0;
+    const now = performance.now();
+    panSamples.forEach((s, i) => {
+      const weight = i + 1; // newer samples heavier
+      sx += s.vx * weight;
+      sy += s.vy * weight;
+      w += weight;
+    });
+    let vx = sx / w;
+    let vy = sy / w;
+    const sp = Math.hypot(vx, vy);
+    if (sp > PAN_MAX_V) {
+      const s = PAN_MAX_V / sp;
+      vx *= s;
+      vy *= s;
+    }
+    return { vx, vy };
+  }
+
+  function startPan(x, y) {
+    stopPanInertia();
+    panning = true;
+    panLastX = x;
+    panLastY = y;
+    panLastT = performance.now();
+    panVX = 0;
+    panVY = 0;
+    panSamples.length = 0;
+    viewport.classList.add('panning');
+  }
+
+  function movePan(x, y) {
+    if (!panning) return;
+    const now = performance.now();
+    const dt = Math.max(1, now - (panLastT || now));
+    const dx = x - panLastX;
+    const dy = y - panLastY;
+    panLastX = x;
+    panLastY = y;
+    panLastT = now;
+    sampleVelocity(dx, dy, dt);
+    viewport.scrollLeft -= dx;
+    viewport.scrollTop -= dy;
+    clampScroll();
+  }
+
+  function endPan() {
+    if (!panning) return;
+    panning = false;
+    touchPan = false;
+    if (!spaceHeld && toolMode !== 'drag') viewport.classList.remove('panning');
+    const v = velocityFromSamples();
+    panVX = v.vx;
+    panVY = v.vy;
+    panSamples.length = 0;
+    if (Math.hypot(panVX, panVY) > PAN_STOP * 2) {
+      panLastT = 0;
+      panInertiaRaf = requestAnimationFrame(runPanInertia);
+    } else {
+      panVX = 0;
+      panVY = 0;
+    }
+  }
+
+  viewport.addEventListener('mousedown', e => {
+    const wantPan = e.button === 1 || e.button === 2 ||
+      (e.button === 0 && (spaceHeld || toolMode === 'drag'));
+    if (!wantPan) return;
+    startPan(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!panning || touchPan) return;
+    movePan(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+
+  window.addEventListener('mouseup', () => endPan());
+  window.addEventListener('mouseleave', () => { if (panning && !touchPan) endPan(); });
+
+  viewport.addEventListener('contextmenu', e => { e.preventDefault(); });
+
+  let lastMouseX = null, lastMouseY = null;
+  viewport.addEventListener('mousemove', e => {
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  }, { passive: true });
+  if ($('zoomIn')) $('zoomIn').onclick = () => bumpZoom(0.25, lastMouseX, lastMouseY);
+  if ($('zoomOut')) $('zoomOut').onclick = () => bumpZoom(-0.25, lastMouseX, lastMouseY);
+  if ($('zoomFit')) $('zoomFit').onclick = () => resize(true);
+  // Navigation: scroll/trackpad = pan · pinch or Ctrl+wheel = zoom toward cursor
+  viewport.addEventListener('wheel', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.ctrlKey || e.metaKey) {
+      // Pinch / ctrl+wheel → zoom to pointer
+      let delta = -e.deltaY * 0.012;
+      delta = Math.max(-0.4, Math.min(0.4, delta));
+      bumpZoom(delta, e.clientX, e.clientY, true); // continuous = instant steps, still HQ settle
+    } else {
+      // Two-finger scroll / mouse wheel → pan
+      const speed = e.deltaMode === 1 ? 24 : 1;
+      viewport.scrollLeft += (e.deltaX || 0) * speed;
+      viewport.scrollTop += (e.deltaY || 0) * speed;
+    }
+  }, { passive: false });
+
+  // Safari gesture events (older Mac trackpad API)
+  let gestureStartZoom = 1;
+  viewport.addEventListener('gesturestart', e => {
+    e.preventDefault();
+    gestureStartZoom = zoom;
+  }, { passive: false });
+  viewport.addEventListener('gesturechange', e => {
+    e.preventDefault();
+    const target = Math.max(1, Math.min(12, gestureStartZoom * e.scale));
+    const delta = target - zoom;
+    if (Math.abs(delta) > 0.001) {
+      bumpZoom(delta, e.clientX || lastMouseX, e.clientY || lastMouseY, true);
+    }
+  }, { passive: false });
+  viewport.addEventListener('gestureend', e => { e.preventDefault(); }, { passive: false });
+
+  // Touch: 1-finger pan (drag mode) · 2-finger pan + pinch zoom
+  viewport.addEventListener('touchstart', e => {
+    stopPanInertia();
+    if (e.touches.length === 1 && (toolMode === 'drag' || spaceHeld)) {
+      touchPan = true;
+      startPan(e.touches[0].clientX, e.touches[0].clientY);
+    } else if (e.touches.length === 2) {
+      // cancel select / 1-finger pan
+      dragging = false;
+      touchPan = true;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastPinch = Math.hypot(dx, dy);
+      pinchMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      pinchMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      startPan(pinchMidX, pinchMidY);
+    }
+  }, { passive: true });
+
+  viewport.addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      // Pan with midpoint
+      movePan(midX, midY);
+      // Pinch zoom
+      if (lastPinch > 0) {
+        const ratio = dist / lastPinch;
+        if (Math.abs(ratio - 1) > 0.008) {
+          bumpZoom((ratio - 1) * zoom, midX, midY, true);
+        }
+      }
+      lastPinch = dist;
+      pinchMidX = midX;
+      pinchMidY = midY;
+    } else if (e.touches.length === 1 && (touchPan || toolMode === 'drag' || spaceHeld)) {
+      e.preventDefault();
+      movePan(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
+
+  viewport.addEventListener('touchend', e => {
+    if (e.touches.length === 0) {
+      lastPinch = 0;
+      endPan();
+      scheduleZoomHQ();
+    } else if (e.touches.length === 1) {
+      // Back to one finger
+      lastPinch = 0;
+      startPan(e.touches[0].clientX, e.touches[0].clientY);
+      touchPan = toolMode === 'drag' || spaceHeld;
+    }
+  });
+
+  viewport.addEventListener('touchcancel', () => {
+    lastPinch = 0;
+    endPan();
+  });
+
+
+window.addEventListener('resize', () => resize(false));
+
+  async function pullWall() {
+    try {
+      const res = await fetch('/api/wall');
+      if (!res.ok) return false;
+      const data = await res.json();
+      regions = [];
+      sold.clear();
+      (data.regions || []).forEach(r => {
+        regions.push(r);
+        (r.cells || []).forEach(k => sold.set(k, r));
+      });
+      draw();
+      syncMediaOverlays();
+      return true;
+    } catch (e) { return false; }
+  }
+
+  (async () => {
+    const ok = await pullWall();
+    if (!ok) load();
+    resize(true);
+    requestAnimationFrame(() => resize(true));
+    setInterval(pullWall, 15000);
+  })();
+
+
+
+
+
+  setTimeout(() => toast('DRAG A RECTANGLE · 100–400 BLOCKS · SCROLL TO MOVE · PINCH TO ZOOM'), 600);
+})();
+</script>
+</body>
+</html>
