@@ -2278,24 +2278,49 @@ Min 100 · Max 400 blocks per buy
     const nm = ($('ownerName').value || '').trim();
     if (!nm) { toast('ENTER OWNER NAME'); return; }
     if (!pendingMedia) { toast('ADD AN IMAGE OR VIDEO'); return; }
-    if (!validatePayment()) return;
 
+    // Stripe Checkout — redirect (no mock payment)
     paying = true;
     const btn = $('confirmBtn');
     btn.disabled = true;
-    btn.textContent = 'PROCESSING...';
-    $('payHint').textContent = 'Processing payment… please wait.';
+    btn.textContent = 'REDIRECTING...';
+    if ($('payHint')) $('payHint').textContent = 'Opening Stripe Checkout…';
 
-    // Simulate full checkout steps
-    setTimeout(() => {
-      btn.textContent = 'CONFIRMING...';
-      $('payHint').textContent = 'Confirming with ' + payMethod.toUpperCase() + '…';
-      setTimeout(() => {
-        btn.textContent = 'SUCCESS';
-        $('payHint').textContent = 'Payment successful! Placing your pixels…';
-        setTimeout(finalizeClaim, 500);
-      }, 700);
-    }, 900);
+    const keys = Array.from(selected);
+    const payload = {
+      cells: keys,
+      name: nm,
+      desc: ($('desc').value || '').trim().slice(0, 120),
+      duration: $('duration').value,
+      media: pendingMedia,
+      mediaType: pendingType,
+      fit: fitMode,
+      link: typeof buildLink === 'function' ? buildLink() : ($('link').value || ''),
+      linkType: $('linkType').value,
+      paid: keys.length * price()
+    };
+    try { sessionStorage.setItem('hpw_pending_claim', JSON.stringify(payload)); } catch (e) {}
+
+    fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(r => r.json().then(data => ({ ok: r.ok, data })))
+      .then(({ ok, data }) => {
+        if (ok && data && data.url) {
+          window.location.href = data.url;
+          return;
+        }
+        throw new Error((data && data.error) || 'Checkout failed');
+      })
+      .catch(err => {
+        paying = false;
+        btn.disabled = false;
+        btn.textContent = 'PAY & CLAIM';
+        if ($('payHint')) $('payHint').textContent = err.message || 'Stripe failed';
+        toast(err.message || 'STRIPE FAILED — CHECK KEY ON RENDER');
+      });
   };
 
   window.addEventListener('keydown', e => {
@@ -2692,11 +2717,38 @@ window.addEventListener('resize', () => resize(false));
     resize(true);
     requestAnimationFrame(() => resize(true));
     setInterval(pullWall, 15000);
+
+    // Back from Stripe success
+    const params = new URLSearchParams(location.search);
+    if (params.get('paid') === '1') {
+      const raw = sessionStorage.getItem('hpw_pending_claim');
+      if (raw) {
+        try {
+          const payload = JSON.parse(raw);
+          const res = await fetch('/api/claim', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json().catch(() => ({}));
+          sessionStorage.removeItem('hpw_pending_claim');
+          history.replaceState({}, '', '/');
+          await pullWall();
+          if (res.ok) toast('PAYMENT OK — PIXELS CLAIMED');
+          else toast((data && data.error) || 'CLAIM FAILED AFTER PAY');
+        } catch (e) {
+          toast('CLAIM ERROR AFTER PAY');
+        }
+      } else {
+        history.replaceState({}, '', '/');
+        toast('PAYMENT RECEIVED');
+      }
+    } else if (params.get('canceled') === '1') {
+      history.replaceState({}, '', '/');
+      toast('PAYMENT CANCELED');
+      try { sessionStorage.removeItem('hpw_pending_claim'); } catch (e) {}
+    }
   })();
-
-
-
-
 
   setTimeout(() => toast('DRAG A RECTANGLE · 100–400 BLOCKS · SCROLL TO MOVE · PINCH TO ZOOM'), 600);
 })();

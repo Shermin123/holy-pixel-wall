@@ -38,6 +38,11 @@ function soldMap(db) {
   }
   return m;
 }
+function priceUnit(duration) {
+  if (duration === 'permanent') return 50;
+  if (duration === '1day') return 0.1;
+  return 0.25;
+}
 function json(res, code, obj) {
   res.writeHead(code, {
     'Content-Type': 'application/json',
@@ -62,13 +67,66 @@ const server = http.createServer(async (req, res) => {
   const p = url.pathname;
 
   try {
-    if (p === '/api/health') return json(res, 200, { ok: true, shared: true });
+    if (p === '/api/health') {
+      return json(res, 200, {
+        ok: true,
+        shared: true,
+        stripe: !!(process.env.STRIPE_SECRET_KEY)
+      });
+    }
 
     if (p === '/api/wall' && req.method === 'GET') {
       const db = load();
       soldMap(db);
       save(db);
       return json(res, 200, { regions: db.regions, minBuy: MIN, maxBuy: MAX });
+    }
+
+    // --- Stripe Checkout ---
+    if (p === '/api/checkout' && req.method === 'POST') {
+      const key = process.env.STRIPE_SECRET_KEY || '';
+      if (!key) {
+        return json(res, 400, { ok: false, error: 'Stripe not configured — set STRIPE_SECRET_KEY on Render' });
+      }
+      const data = JSON.parse((await body(req)) || '{}');
+      const cells = data.cells || [];
+      if (cells.length < MIN || cells.length > MAX) {
+        return json(res, 400, { ok: false, error: 'Need ' + MIN + '-' + MAX + ' blocks' });
+      }
+      const unit = priceUnit(data.duration || 'daily');
+      const totalCents = Math.round(cells.length * unit * 100);
+      if (totalCents < 50) {
+        return json(res, 400, { ok: false, error: 'Amount too small for Stripe' });
+      }
+
+      const publicUrl = (process.env.PUBLIC_URL || 'https://holy-pixel-wall.onrender.com').replace(/\/$/, '');
+      const params = new URLSearchParams();
+      params.append('mode', 'payment');
+      params.append('success_url', publicUrl + '/?paid=1&session_id={CHECKOUT_SESSION_ID}');
+      params.append('cancel_url', publicUrl + '/?canceled=1');
+      params.append('line_items[0][price_data][currency]', 'usd');
+      params.append('line_items[0][price_data][product_data][name]', 'Holy Pixel Wall — ' + cells.length + ' pixels');
+      params.append('line_items[0][price_data][unit_amount]', String(totalCents));
+      params.append('line_items[0][quantity]', '1');
+      params.append('metadata[pixels]', String(cells.length));
+      params.append('metadata[name]', String(data.name || '').slice(0, 40));
+
+      const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + key,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: params
+      });
+      const session = await stripeRes.json();
+      if (!stripeRes.ok) {
+        return json(res, 500, {
+          ok: false,
+          error: (session.error && session.error.message) || 'Stripe error'
+        });
+      }
+      return json(res, 200, { ok: true, url: session.url, id: session.id });
     }
 
     if (p === '/api/claim' && req.method === 'POST') {
@@ -115,7 +173,12 @@ const server = http.createServer(async (req, res) => {
     fs.readFile(full, (err, buf) => {
       if (err) { res.writeHead(404); return res.end('Not found'); }
       const ext = path.extname(full);
-      const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
+      const types = {
+        '.html': 'text/html; charset=utf-8',
+        '.js': 'text/javascript',
+        '.css': 'text/css',
+        '.json': 'application/json'
+      };
       res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
       res.end(buf);
     });
@@ -126,4 +189,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log('Shared Holy Pixel Wall: http://localhost:' + PORT);
+  console.log('Stripe:', process.env.STRIPE_SECRET_KEY ? 'ON' : 'OFF (set STRIPE_SECRET_KEY)');
 });
