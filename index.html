@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Holy Pixel Wall</title>
+<script src="https://js.stripe.com/v3/"></script>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -739,25 +740,12 @@
         </div>
       </div>
       <div class="field">
-        <label>PAYMENT METHOD</label>
-        <div id="payMethods" style="display:flex;flex-wrap:wrap;gap:6px">
-          <button type="button" class="fit-btn pay-btn active" data-pay="card">CARD</button>
-          <button type="button" class="fit-btn pay-btn" data-pay="paypal">PAYPAL</button>
-          <button type="button" class="fit-btn pay-btn" data-pay="crypto">CRYPTO</button>
-        </div>
-        <div id="payCardFields" style="margin-top:8px">
-          <input type="text" id="cardName" placeholder="Name on card" maxlength="40" style="margin-bottom:6px">
-          <input type="text" id="cardNumber" placeholder="Card number" maxlength="19" style="margin-bottom:6px">
-          <div style="display:flex;gap:6px">
-            <input type="text" id="cardExp" placeholder="MM/YY" maxlength="5" style="flex:1">
-            <input type="text" id="cardCvv" placeholder="CVV" maxlength="4" style="flex:1">
-          </div>
-        </div>
-        <div id="payAltFields" style="display:none;margin-top:8px">
-          <input type="email" id="payEmail" placeholder="Email for receipt">
-        </div>
+        <label>PAYMENT</label>
+        <p style="font-size:0.9rem;color:var(--muted);margin-bottom:8px">Card · Apple Pay · Google Pay — stays on this page</p>
+        <div id="payment-element" style="padding:10px;background:#fff;border:3px solid var(--border);min-height:48px"></div>
+        <p id="payment-message" style="color:var(--danger);font-size:0.9rem;margin-top:6px;min-height:1.1em"></p>
         <p id="payTotalLine" style="font-family:'Press Start 2P',monospace;font-size:0.45rem;color:var(--dark);margin-top:10px">TOTAL: $0.00</p>
-        <p id="payHint" style="font-size:0.85rem;color:var(--muted);margin-top:6px">Secure checkout · complete payment to claim</p>
+        <p id="payHint" style="font-size:0.85rem;color:var(--muted);margin-top:6px">Secure payment powered by Stripe</p>
       </div>
     </div>
     <div class="modal-foot">
@@ -1800,6 +1788,14 @@ Min 100 · Max 400 blocks per buy
     $('claimModal').style.display = 'none';
     document.body.style.overflow = '';
     editingRegion = null;
+    stripe = null;
+    stripeElements = null;
+    paymentElement = null;
+    pendingClaimPayload = null;
+    const pe = $('payment-element');
+    if (pe) pe.innerHTML = '';
+    const pm = $('payment-message');
+    if (pm) pm.textContent = '';
     $('duration').disabled = false;
     const payField = $('payMethods') && $('payMethods').closest('.field');
     if (payField) payField.style.display = '';
@@ -2087,38 +2083,15 @@ Min 100 · Max 400 blocks per buy
   let payMethod = 'card';
   let editingRegion = null;
   let paying = false;
+  let stripe = null;
+  let stripeElements = null;
+  let paymentElement = null;
+  let pendingClaimPayload = null;
 
-  document.querySelectorAll('.pay-btn').forEach(b => {
-    b.onclick = () => {
-      if (paying) return;
-      payMethod = b.dataset.pay;
-      document.querySelectorAll('.pay-btn').forEach(x => x.classList.toggle('active', x === b));
-      const cardFields = $('payCardFields');
-      const altFields = $('payAltFields');
-      const hint = $('payHint');
-      if (payMethod === 'card') {
-        cardFields.style.display = 'block';
-        altFields.style.display = 'none';
-        hint.textContent = 'Enter card details to complete payment.';
-      } else if (payMethod === 'paypal') {
-        cardFields.style.display = 'none';
-        altFields.style.display = 'block';
-        $('payEmail').placeholder = 'PayPal email';
-        hint.textContent = 'Pay with PayPal — enter your email to continue.';
-      } else {
-        cardFields.style.display = 'none';
-        altFields.style.display = 'block';
-        $('payEmail').placeholder = 'Wallet email / ID';
-        hint.textContent = 'Crypto checkout — enter wallet email or ID.';
-      }
-    };
-  });
+  // pay-btn UI removed — Stripe Payment Element handles methods
 
   // Card number formatting
-  $('cardNumber').addEventListener('input', e => {
-    let v = e.target.value.replace(/\D/g, '').slice(0, 16);
-    e.target.value = v.replace(/(.{4})/g, '$1 ').trim();
-  });
+
   $('cardExp').addEventListener('input', e => {
     let v = e.target.value.replace(/\D/g, '').slice(0, 4);
     if (v.length >= 3) v = v.slice(0, 2) + '/' + v.slice(2);
@@ -2126,22 +2099,7 @@ Min 100 · Max 400 blocks per buy
   });
 
   function validatePayment() {
-    if (payMethod === 'card') {
-      const name = ($('cardName').value || '').trim();
-      const num = ($('cardNumber').value || '').replace(/\s/g, '');
-      const exp = ($('cardExp').value || '').trim();
-      const cvv = ($('cardCvv').value || '').trim();
-      if (name.length < 2) { toast('ENTER NAME ON CARD'); return false; }
-      if (num.length < 13) { toast('ENTER VALID CARD NUMBER'); return false; }
-      if (!/^\d{2}\/\d{2}$/.test(exp)) { toast('ENTER EXPIRY MM/YY'); return false; }
-      if (cvv.length < 3) { toast('ENTER CVV'); return false; }
-      return true;
-    }
-    const email = ($('payEmail').value || '').trim();
-    if (!email || email.length < 5) {
-      toast(payMethod === 'paypal' ? 'ENTER PAYPAL EMAIL' : 'ENTER WALLET ID');
-      return false;
-    }
+    // Card fields handled by Stripe Payment Element
     return true;
   }
 
@@ -2279,13 +2237,7 @@ Min 100 · Max 400 blocks per buy
     if (!nm) { toast('ENTER OWNER NAME'); return; }
     if (!pendingMedia) { toast('ADD AN IMAGE OR VIDEO'); return; }
 
-    // Stripe Checkout — redirect (no mock payment)
-    paying = true;
-    const btn = $('confirmBtn');
-    btn.disabled = true;
-    btn.textContent = 'REDIRECTING...';
-    if ($('payHint')) $('payHint').textContent = 'Opening Stripe Checkout…';
-
+    // In-page Stripe Payment Element (card / Apple Pay / Google Pay)
     const keys = Array.from(selected);
     const payload = {
       cells: keys,
@@ -2299,28 +2251,109 @@ Min 100 · Max 400 blocks per buy
       linkType: $('linkType').value,
       paid: keys.length * price()
     };
-    try { sessionStorage.setItem('hpw_pending_claim', JSON.stringify(payload)); } catch (e) {}
+    pendingClaimPayload = payload;
 
-    fetch('/api/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-      .then(r => r.json().then(data => ({ ok: r.ok, data })))
-      .then(({ ok, data }) => {
-        if (ok && data && data.url) {
-          window.location.href = data.url;
+    const btn = $('confirmBtn');
+    const msg = $('payment-message');
+    if (msg) msg.textContent = '';
+
+    async function mountAndPay() {
+      paying = true;
+      btn.disabled = true;
+      btn.textContent = 'PREPARING...';
+      if ($('payHint')) $('payHint').textContent = 'Loading secure payment…';
+
+      try {
+        if (typeof Stripe === 'undefined') {
+          throw new Error('Stripe.js failed to load — check network');
+        }
+
+        // Create or reuse PaymentIntent
+        if (!stripeElements) {
+          const res = await fetch('/api/create-payment-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (!res.ok || !data.clientSecret) {
+            throw new Error((data && data.error) || 'Could not start payment');
+          }
+          if (!data.publishableKey) {
+            throw new Error('Set STRIPE_PUBLISHABLE_KEY on Render');
+          }
+          stripe = Stripe(data.publishableKey);
+          stripeElements = stripe.elements({
+            clientSecret: data.clientSecret,
+            appearance: {
+              theme: 'stripe',
+              variables: { colorPrimary: '#d4a017', borderRadius: '0px' }
+            }
+          });
+          const el = $('payment-element');
+          if (el) el.innerHTML = '';
+          paymentElement = stripeElements.create('payment', {
+            layout: 'tabs'
+          });
+          paymentElement.mount('#payment-element');
+          btn.textContent = 'PAY NOW';
+          btn.disabled = false;
+          paying = false;
+          if ($('payHint')) $('payHint').textContent = 'Enter card or use Apple Pay / Google Pay, then PAY NOW';
+          toast('PAYMENT READY');
           return;
         }
-        throw new Error((data && data.error) || 'Checkout failed');
-      })
-      .catch(err => {
+
+        // Confirm payment (stays on page when possible)
+        btn.textContent = 'PAYING...';
+        if ($('payHint')) $('payHint').textContent = 'Confirming payment…';
+        const { error, paymentIntent } = await stripe.confirmPayment({
+          elements: stripeElements,
+          redirect: 'if_required',
+          confirmParams: {
+            return_url: window.location.origin + '/?paid=1'
+          }
+        });
+        if (error) {
+          if (msg) msg.textContent = error.message;
+          throw new Error(error.message);
+        }
+        if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing')) {
+          if ($('payHint')) $('payHint').textContent = 'Payment OK — placing pixels…';
+          const claimRes = await fetch('/api/claim', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pendingClaimPayload)
+          });
+          const claimData = await claimRes.json().catch(() => ({}));
+          if (!claimRes.ok) {
+            throw new Error((claimData && claimData.error) || 'Paid but claim failed — contact support');
+          }
+          // Local lock for instant UI
+          selected.clear();
+          clearPending();
+          closeClaimModal();
+          floatBar.classList.remove('visible');
+          if (typeof pullWall === 'function') await pullWall();
+          toast('PAID — PIXELS CLAIMED');
+          // reset stripe widgets for next purchase
+          stripe = null;
+          stripeElements = null;
+          paymentElement = null;
+          pendingClaimPayload = null;
+        } else {
+          throw new Error('Payment not completed');
+        }
+      } catch (err) {
         paying = false;
         btn.disabled = false;
-        btn.textContent = 'PAY & CLAIM';
-        if ($('payHint')) $('payHint').textContent = err.message || 'Stripe failed';
-        toast(err.message || 'STRIPE FAILED — CHECK KEY ON RENDER');
-      });
+        btn.textContent = stripeElements ? 'PAY NOW' : 'PAY & CLAIM';
+        if ($('payHint')) $('payHint').textContent = err.message || 'Payment failed';
+        toast(err.message || 'PAYMENT FAILED');
+      }
+    }
+
+    mountAndPay();
   };
 
   window.addEventListener('keydown', e => {
