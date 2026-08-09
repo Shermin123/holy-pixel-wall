@@ -710,46 +710,30 @@
         <label>YOUR IMAGE</label>
         <div class="upload" id="upload">
           <input type="file" id="file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,video/mp4,video/webm,video/*" hidden>
-          <p style="line-height:1.4"><strong style="color:var(--dark)">Tap to add a photo</strong><br>
-          <span style="font-size:0.9rem">drag a file · or paste (Ctrl+V)</span><br>
-          <span style="font-size:0.85rem;opacity:0.8">JPG, PNG, GIF, or video</span></p>
+          <p style="line-height:1.4"><strong style="color:var(--dark)">Add a photo</strong><br>
+          <span style="font-size:0.9rem">tap, drag, or paste (Ctrl+V)</span></p>
           <img id="preview" alt="">
           <video id="previewVideo" muted loop playsinline style="display:none;max-width:100%;max-height:110px;margin:0 auto"></video>
         </div>
-        <div class="field" style="margin-top:10px;margin-bottom:8px">
-          <label>OR PASTE IMAGE LINK</label>
-          <input type="url" id="imgUrl" placeholder="https://… paste image or gif URL">
-        </div>
-        <div id="blockPreviewWrap" style="display:none;margin-top:8px">
-          <label style="display:block;margin-bottom:6px">HOW IT LOOKS ON YOUR BLOCK</label>
-          <div style="background:#2a2118;border:3px solid var(--border);padding:8px;text-align:center">
-            <canvas id="blockPreview" width="280" height="160" style="max-width:100%;height:auto;image-rendering:auto;background:#1a1512;display:inline-block"></canvas>
+        <input type="url" id="imgUrl" placeholder="Or paste photo link (https://…)" style="width:100%;margin-top:8px;padding:8px 10px;background:#fff;border:3px solid var(--border);color:var(--text);font-family:VT323,monospace;font-size:1.05rem">
+        <div id="blockPreviewWrap" style="display:none;margin-top:10px">
+          <p style="font-size:0.9rem;color:var(--muted);margin-bottom:6px">Preview on your block</p>
+          <div style="background:#2a2118;border:2px solid var(--border);padding:6px;text-align:center">
+            <canvas id="blockPreview" width="280" height="160" style="max-width:100%;height:auto;background:#1a1512"></canvas>
           </div>
-          <p id="blockPreviewMeta" style="font-size:0.85rem;color:var(--muted);margin-top:6px"></p>
         </div>
-        <div class="fit-row" id="fitRow" style="display:none;margin-top:8px">
-          <button type="button" class="fit-btn active" data-fit="cover">FILL</button>
-          <button type="button" class="fit-btn" data-fit="contain">FIT</button>
-          <button type="button" class="fit-btn" data-fit="fill">STRETCH</button>
-        </div>
-        <p id="fitHint" style="display:none;font-size:0.85rem;color:var(--muted);margin-top:6px">FILL = covers the whole block · also previewed on the wall</p>
+        <div class="fit-row" id="fitRow" style="display:none"></div>
+        <p id="fitHint" style="display:none"></p>
       </div>
       <div class="field">
-        <label>SOCIAL / LINK (PROFILE OR POST)</label>
-        <div style="display:flex;gap:6px">
-          <select id="linkType" style="width:42%;padding:8px 6px;background:#fffef8;border:3px solid var(--border);color:var(--text);font-family:'VT323',monospace;font-size:1rem">
-            <option value="none">NONE</option>
-            <option value="instagram">INSTAGRAM</option>
-            <option value="tiktok">TIKTOK</option>
-            <option value="youtube">YOUTUBE</option>
-            <option value="twitter">X / TWITTER</option>
-            <option value="website">WEBSITE</option>
-            <option value="other">OTHER</option>
-          </select>
-          <input type="text" id="link" placeholder="profile or post URL" style="flex:1;display:none">
-        </div>
-      </div>
-      <div class="field">
+        <label>YOUR LINK</label>
+        <p style="font-size:0.9rem;color:var(--muted);margin-bottom:6px">When people click your block, they go here</p>
+        <input type="url" id="link" placeholder="https://instagram.com/you  or any website">
+        <select id="linkType" style="display:none">
+          <option value="website" selected>WEBSITE</option>
+          <option value="none">NONE</option>
+        </select>
+      </div><div class="field">
         <label>PAYMENT</label>
         <p style="font-size:0.9rem;color:var(--muted);margin-bottom:8px">Secure Stripe Checkout · Card, Apple Pay & Google Pay</p>
         <div id="payment-element" style="padding:10px;background:#fff;border:3px solid var(--border);min-height:48px"></div>
@@ -839,7 +823,7 @@ Min 100 blocks · no maximum
   let regions = [];
   let pendingMedia = '';
   let pendingType = 'image';
-  let fitMode = 'cover'; // always fill owned block
+  let fitMode = 'cover'; // always fill — no user choice
   let dragging = false, deselect = false, additiveSelect = false, didDrag = false;
   let startC = 0, startR = 0, curC = 0, curR = 0;
   let dragBaseline = new Set(); // selection before this drag started
@@ -1762,21 +1746,16 @@ Min 100 blocks · no maximum
     }
     if (r.media) setPending(r.media, r.mediaType || 'image');
     else clearPending();
-    fitMode = r.fit || 'cover';
+    fitMode = 'cover';
     document.querySelectorAll('.fit-btn').forEach(b => {
       if (b.dataset.fit) b.classList.toggle('active', b.dataset.fit === fitMode);
     });
     const lt = $('linkType');
-    if (lt) lt.value = r.linkType || 'none';
+    if (lt) lt.value = (r.link ? 'website' : 'none');
     const link = $('link');
     if (link) {
-      if (r.linkType && r.linkType !== 'none') {
-        link.style.display = 'block';
-        link.value = r.link || '';
-      } else {
-        link.style.display = 'none';
-        link.value = '';
-      }
+      link.style.display = 'block';
+      link.value = r.link || '';
     }
     setVal('infoPixels', (r.pixels || 0) + ' PIXELS (OWNED)');
     setVal('infoPrice', 'EDIT MODE');
@@ -2161,45 +2140,14 @@ Min 100 blocks · no maximum
   });
 
   function buildLink() {
-    const type = $('linkType').value;
-    let val = $('link').value.trim();
-    if (type === 'none' || !val) return '';
-    // Full profile OR post URL — keep as-is
-    if (/^https?:\/\//i.test(val)) return val;
-    val = val.replace(/^@/, '');
-    const map = {
-      instagram: 'https://instagram.com/',
-      tiktok: 'https://www.tiktok.com/@',
-      youtube: 'https://youtube.com/@',
-      twitter: 'https://x.com/',
-      website: 'https://',
-      other: ''
-    };
-    const prefix = map[type] || '';
-    if (type === 'other') return val;
-    if (type === 'website' && !val.includes('.')) return '';
-    return prefix + val;
+    const v = ($('link') && $('link').value || '').trim();
+    if (!v) return '';
+    if (/^https?:\/\//i.test(v)) return v;
+    return 'https://' + v.replace(/^\/+/, '');
   }
 
-  $('linkType').onchange = () => {
-    const t = $('linkType').value;
-    const input = $('link');
-    if (t === 'none') {
-      input.style.display = 'none';
-      input.value = '';
-      return;
-    }
-    input.style.display = 'block';
-    const placeholders = {
-      instagram: 'profile or post URL / @user',
-      tiktok: 'profile or video URL / @user',
-      youtube: 'channel or video URL / @user',
-      twitter: 'profile or post URL / @user',
-      website: 'yoursite.com',
-      other: 'any URL'
-    };
-    input.placeholder = placeholders[t] || 'profile, post, or URL';
-  };
+  // link is always a simple URL field
+
 
   // Payment method UI
   let payMethod = 'card';
@@ -2258,7 +2206,7 @@ Min 100 blocks · no maximum
       mediaType: pendingType,
       fit: fitMode,
       link: buildLink(),
-      linkType: $('linkType').value,
+      linkType: (($('link') && $('link').value || '').trim() ? 'website' : 'none'),
       duration: $('duration').value,
       payMethod: payMethod,
       paid: total,
@@ -2327,7 +2275,7 @@ Min 100 blocks · no maximum
       er.mediaType = pendingType;
       er.fit = fitMode;
       er.link = buildLink();
-      er.linkType = $('linkType').value;
+      er.linkType = (($('link') && $('link').value || '').trim() ? 'website' : 'none');
       save();
       draw();
       syncMediaOverlays();
@@ -2360,7 +2308,7 @@ Min 100 blocks · no maximum
       mediaType: pendingType,
       fit: fitMode,
       link: typeof buildLink === 'function' ? buildLink() : ($('link').value || ''),
-      linkType: $('linkType').value,
+      linkType: (($('link') && $('link').value || '').trim() ? 'website' : 'none'),
       paid: keys.length * price()
     };
     try { sessionStorage.setItem('hpw_pending_claim', JSON.stringify(payload)); } catch (e) {}
