@@ -7,7 +7,7 @@ const { URL } = require('url');
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 const DB = path.join(ROOT, 'data', 'claims.json');
-const MIN = 100, MAX = 400;
+const MIN = 100, MAX = 999999;
 
 fs.mkdirSync(path.join(ROOT, 'data'), { recursive: true });
 fs.mkdirSync(path.join(ROOT, 'uploads'), { recursive: true });
@@ -43,11 +43,6 @@ function priceUnit(duration) {
   if (duration === '1day') return 0.1;
   return 0.25;
 }
-function publicBase() {
-  let u = (process.env.PUBLIC_URL || 'https://holy-pixel-wall.onrender.com').trim();
-  if (!/^https?:\/\//i.test(u)) u = 'https://' + u.replace(/^\/+/, '');
-  return u.replace(/\/$/, '');
-}
 function json(res, code, obj) {
   res.writeHead(code, {
     'Content-Type': 'application/json',
@@ -76,8 +71,7 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, {
         ok: true,
         shared: true,
-        stripe: !!(process.env.STRIPE_SECRET_KEY),
-        publishable: !!(process.env.STRIPE_PUBLISHABLE_KEY)
+        stripe: !!(process.env.STRIPE_SECRET_KEY)
       });
     }
 
@@ -88,55 +82,6 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { regions: db.regions, minBuy: MIN, maxBuy: MAX });
     }
 
-    // Embedded pay: PaymentIntent (card + Apple Pay + Google Pay on your page)
-    if (p === '/api/create-payment-intent' && req.method === 'POST') {
-      const key = process.env.STRIPE_SECRET_KEY || '';
-      if (!key) {
-        return json(res, 400, { ok: false, error: 'Stripe not configured — set STRIPE_SECRET_KEY on Render' });
-      }
-      const data = JSON.parse((await body(req)) || '{}');
-      const cells = data.cells || [];
-      if (cells.length < MIN || cells.length > MAX) {
-        return json(res, 400, { ok: false, error: 'Need ' + MIN + '-' + MAX + ' blocks' });
-      }
-      const unit = priceUnit(data.duration || 'daily');
-      const amount = Math.round(cells.length * unit * 100);
-      if (amount < 50) {
-        return json(res, 400, { ok: false, error: 'Amount too small for Stripe (min $0.50)' });
-      }
-
-      const params = new URLSearchParams();
-      params.append('amount', String(amount));
-      params.append('currency', 'usd');
-      params.append('automatic_payment_methods[enabled]', 'true');
-      params.append('metadata[pixels]', String(cells.length));
-      params.append('metadata[name]', String(data.name || '').slice(0, 40));
-      params.append('metadata[duration]', String(data.duration || 'daily'));
-
-      const stripeRes = await fetch('https://api.stripe.com/v1/payment_intents', {
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer ' + key,
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: params
-      });
-      const pi = await stripeRes.json();
-      if (!stripeRes.ok) {
-        return json(res, 500, {
-          ok: false,
-          error: (pi.error && pi.error.message) || 'Stripe PaymentIntent error'
-        });
-      }
-      return json(res, 200, {
-        ok: true,
-        clientSecret: pi.client_secret,
-        publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
-        amount: amount
-      });
-    }
-
-    // Redirect Checkout (optional fallback)
     if (p === '/api/checkout' && req.method === 'POST') {
       const key = process.env.STRIPE_SECRET_KEY || '';
       if (!key) {
@@ -145,7 +90,7 @@ const server = http.createServer(async (req, res) => {
       const data = JSON.parse((await body(req)) || '{}');
       const cells = data.cells || [];
       if (cells.length < MIN || cells.length > MAX) {
-        return json(res, 400, { ok: false, error: 'Need ' + MIN + '-' + MAX + ' blocks' });
+        return json(res, 400, { ok: false, error: cells.length < MIN ? ('Need at least ' + MIN + ' blocks') : 'Too many blocks' });
       }
       const unit = priceUnit(data.duration || 'daily');
       const totalCents = Math.round(cells.length * unit * 100);
@@ -153,7 +98,7 @@ const server = http.createServer(async (req, res) => {
         return json(res, 400, { ok: false, error: 'Amount too small for Stripe' });
       }
 
-      const publicUrl = publicBase();
+      const publicUrl = (process.env.PUBLIC_URL || 'https://holy-pixel-wall.onrender.com').replace(/\/$/, '');
       const params = new URLSearchParams();
       params.append('mode', 'payment');
       params.append('success_url', publicUrl + '/?paid=1&session_id={CHECKOUT_SESSION_ID}');
@@ -187,7 +132,7 @@ const server = http.createServer(async (req, res) => {
       const data = JSON.parse((await body(req)) || '{}');
       const cells = data.cells || [];
       if (cells.length < MIN || cells.length > MAX)
-        return json(res, 400, { ok: false, error: 'Need ' + MIN + '-' + MAX + ' blocks' });
+        return json(res, 400, { ok: false, error: cells.length < MIN ? ('Need at least ' + MIN + ' blocks') : 'Too many blocks' });
       const db = load();
       const map = soldMap(db);
       for (const k of cells) {
@@ -220,7 +165,6 @@ const server = http.createServer(async (req, res) => {
       return json(res, 201, { ok: true, region });
     }
 
-    // static files
     let file = p === '/' ? '/index.html' : p;
     const full = path.join(ROOT, path.normalize(file));
     if (!full.startsWith(ROOT)) { res.writeHead(403); return res.end('no'); }
@@ -243,6 +187,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log('Shared Holy Pixel Wall: http://localhost:' + PORT);
-  console.log('Stripe secret:', process.env.STRIPE_SECRET_KEY ? 'ON' : 'OFF');
-  console.log('Stripe publishable:', process.env.STRIPE_PUBLISHABLE_KEY ? 'ON' : 'OFF');
+  console.log('Stripe:', process.env.STRIPE_SECRET_KEY ? 'ON' : 'OFF');
 });
