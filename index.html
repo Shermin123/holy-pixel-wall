@@ -741,11 +741,11 @@
       </div>
       <div class="field">
         <label>PAYMENT</label>
-        <p style="font-size:0.9rem;color:var(--muted);margin-bottom:8px">Card · Apple Pay · Google Pay — stays on this page</p>
+        <p style="font-size:0.9rem;color:var(--muted);margin-bottom:8px">Secure Stripe Checkout · Card, Apple Pay & Google Pay</p>
         <div id="payment-element" style="padding:10px;background:#fff;border:3px solid var(--border);min-height:48px"></div>
         <p id="payment-message" style="color:var(--danger);font-size:0.9rem;margin-top:6px;min-height:1.1em"></p>
         <p id="payTotalLine" style="font-family:'Press Start 2P',monospace;font-size:0.45rem;color:var(--dark);margin-top:10px">TOTAL: $0.00</p>
-        <p id="payHint" style="font-size:0.85rem;color:var(--muted);margin-top:6px">Secure payment powered by Stripe</p>
+        <p id="payHint" style="font-size:0.85rem;color:var(--muted);margin-top:6px">One click → Stripe · Apple Pay available in Safari after domain is verified</p>
       </div>
     </div>
     <div class="modal-foot">
@@ -788,7 +788,7 @@ Scroll = pan · Pinch / Ctrl+wheel = zoom<br>
 Space+drag or DRAG tool = pan<br>
 Ctrl+Z = undo · Esc = clear · Enter = claim<br>
 Arrows = pan · +/− = zoom · 0 = fit<br>
-Min 100 blocks per buy · no max
+Min 100 blocks · no maximum
 </div>
 <button class="btn btn-pri" id="helpClose">GOT IT</button>
     </div>
@@ -839,7 +839,7 @@ Min 100 blocks per buy · no max
   let panning = false, panLastX = 0, panLastY = 0;
   const SECTION = 10; // big block = 10×10 pixels
   const MIN_BUY = 100;
-  const MAX_BUY = 50000; // no practical max — whole wall
+  const MAX_BUY = 999999; // effectively unlimited
   let sizeW = 600, sizeH = 600, cell = 6;
   let baseW = 600, baseH = 600, baseCell = 6;
   let zoom = 1, hqZoom = 1, zoomTimer = null;
@@ -1514,20 +1514,7 @@ Min 100 blocks per buy · no max
       for (let r = minR; r <= maxR; r++)
         if (sold.has(c + ',' + r)) blocked++;
 
-    // Cap rectangle size to MAX_BUY by shrinking toward start
-    let w = maxC - minC + 1;
-    let h = maxR - minR + 1;
-    while (w * h > MAX_BUY && (w > 1 || h > 1)) {
-      if (w >= h && maxC > minC) {
-        if (Math.abs(maxC - startC) >= Math.abs(minC - startC)) maxC--;
-        else minC++;
-        w = maxC - minC + 1;
-      } else if (maxR > minR) {
-        if (Math.abs(maxR - startR) >= Math.abs(minR - startR)) maxR--;
-        else minR++;
-        h = maxR - minR + 1;
-      } else break;
-    }
+    // No max size — any free rectangle allowed
 
     const next = new Set();
     blocked = 0;
@@ -1543,9 +1530,6 @@ Min 100 blocks per buy · no max
     if (blocked > 0 && tip) {
       tip.style.display = 'block';
       tip.innerHTML = '<strong>RECTANGLE</strong>contains ' + blocked + ' owned — pick a free area';
-    } else if (w * h >= MAX_BUY && tip) {
-      tip.style.display = 'block';
-      tip.innerHTML = '<strong>' + selected.size + ' BLOCKS</strong>';
     }
     try { draw(); } catch (err) { console.warn(err); }
     try { updateFloat(); } catch (err) { console.warn(err); }
@@ -1555,7 +1539,7 @@ Min 100 blocks per buy · no max
     purgeSelectedOwned();
     const n = selected.size;
     if (n > 0) {
-      $('selCount').textContent = n + (n < MIN_BUY ? ' (min ' + MIN_BUY + ')' : n > MAX_BUY ? ' (max ' + MAX_BUY + ')' : '');
+      $('selCount').textContent = n + (n < MIN_BUY ? ' (min ' + MIN_BUY + ')' : '');
       $('selPrice').textContent = '$' + (n * price()).toFixed(2);
       floatBar.classList.add('visible');
     } else {
@@ -1672,7 +1656,7 @@ Min 100 blocks per buy · no max
       for (let rr = sr; rr <= maxR; rr++) {
         const k = cc + ',' + rr;
         if (sold.has(k)) { blocked++; continue; }
-        if (selected.size >= MAX_BUY) continue;
+        // unlimited
         selected.add(k);
         added++;
       }
@@ -1681,7 +1665,7 @@ Min 100 blocks per buy · no max
     updateFloat();
     draw();
     if (added === 0) toast('BIG BLOCK FULLY OWNED');
-    else if (selected.size >= MAX_BUY) toast('MAX ' + MAX_BUY + ' BLOCKS · ' + added + ' ADDED');
+    else if (false) {}
     else if (blocked > 0) toast('BIG BLOCK · ' + added + ' FREE · ' + blocked + ' LOCKED');
     else toast('BIG BLOCK SELECTED · ' + added + ' PX');
   }
@@ -1851,10 +1835,7 @@ Min 100 blocks per buy · no max
       toast('MINIMUM ' + MIN_BUY + ' BLOCKS');
       return;
     }
-    if (selected.size > MAX_BUY) {
-      toast('MAXIMUM ' + MAX_BUY + ' BLOCKS');
-      return;
-    }
+    // no maximum
     if (!isSolidRectangle(Array.from(selected))) {
       toast('SELECT A SOLID RECTANGLE ONLY');
       return;
@@ -2263,8 +2244,8 @@ Min 100 blocks per buy · no max
       return;
     }
     if (paying || !selected.size) return;
-    if (selected.size < MIN_BUY || selected.size > MAX_BUY) {
-      toast('NEED ' + MIN_BUY + '–' + MAX_BUY + ' BLOCKS');
+    if (selected.size < MIN_BUY) {
+      toast('MINIMUM ' + MIN_BUY + ' BLOCKS');
       return;
     }
     if (!isSolidRectangle(Array.from(selected))) {
@@ -2275,7 +2256,7 @@ Min 100 blocks per buy · no max
     if (!nm) { toast('ENTER OWNER NAME'); return; }
     if (!pendingMedia) { toast('ADD AN IMAGE OR VIDEO'); return; }
 
-    // Simple pay: 1st click loads card form · 2nd click charges · fallback to Stripe page
+    // One-click Stripe Checkout (Card + Apple Pay + Google Pay on Stripe)
     const keys = Array.from(selected);
     const payload = {
       cells: keys,
@@ -2289,140 +2270,38 @@ Min 100 blocks per buy · no max
       linkType: $('linkType').value,
       paid: keys.length * price()
     };
-    pendingClaimPayload = payload;
     try { sessionStorage.setItem('hpw_pending_claim', JSON.stringify(payload)); } catch (e) {}
 
     const btn = $('confirmBtn');
     const msg = $('payment-message');
     if (msg) msg.textContent = '';
+    paying = true;
+    btn.disabled = true;
+    btn.textContent = 'OPENING PAY…';
+    if ($('payHint')) $('payHint').textContent = 'Redirecting to secure Stripe Checkout…';
 
-    async function finishClaimAfterPay() {
-      const claimRes = await fetch('/api/claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pendingClaimPayload || payload)
-      });
-      const claimData = await claimRes.json().catch(() => ({}));
-      if (!claimRes.ok) {
-        throw new Error((claimData && claimData.error) || 'Paid but claim failed — contact support');
-      }
-      selected.clear();
-      clearPending();
-      closeClaimModal();
-      if (floatBar) floatBar.classList.remove('visible');
-      if (typeof pullWall === 'function') await pullWall();
-      else { save(); draw(); }
-      try { sessionStorage.removeItem('hpw_pending_claim'); } catch (e) {}
-      toast('PAID — PIXELS CLAIMED');
-      stripe = null;
-      stripeElements = null;
-      paymentElement = null;
-      pendingClaimPayload = null;
-    }
-
-    async function checkoutRedirectFallback() {
-      if ($('payHint')) $('payHint').textContent = 'Opening Stripe…';
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json().catch(() => ({}));
-      if (data && data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      throw new Error((data && data.error) || 'Checkout unavailable');
-    }
-
-    async function mountAndPay() {
-      if (paying) return;
-      paying = true;
-      btn.disabled = true;
-      btn.textContent = 'PLEASE WAIT...';
-      if ($('payHint')) $('payHint').textContent = 'Preparing payment…';
-
-      try {
-        if (typeof Stripe === 'undefined') {
-          await checkoutRedirectFallback();
+    fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })))
+      .then(({ ok, data }) => {
+        if (ok && data && data.url) {
+          window.location.href = data.url;
           return;
         }
-
-        // First click: mount payment form in modal
-        if (!stripeElements) {
-          const res = await fetch('/api/create-payment-intent', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok || !data.clientSecret) {
-            // Fallback to hosted Checkout
-            await checkoutRedirectFallback();
-            return;
-          }
-          if (!data.publishableKey) {
-            await checkoutRedirectFallback();
-            return;
-          }
-          stripe = Stripe(data.publishableKey);
-          stripeElements = stripe.elements({
-            clientSecret: data.clientSecret,
-            appearance: {
-              theme: 'stripe',
-              variables: { colorPrimary: '#d4a017', borderRadius: '0px' }
-            }
-          });
-          const el = $('payment-element');
-          if (el) el.innerHTML = '';
-          paymentElement = stripeElements.create('payment', { layout: 'tabs' });
-          paymentElement.mount('#payment-element');
-          // scroll payment into view
-          if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-          btn.textContent = 'PAY NOW';
-          btn.disabled = false;
-          paying = false;
-          if ($('payHint')) $('payHint').textContent = 'Card, Apple Pay, or Google Pay — then press PAY NOW';
-          toast('ENTER PAYMENT BELOW');
-          return;
-        }
-
-        // Second click: confirm
-        btn.textContent = 'PAYING...';
-        if ($('payHint')) $('payHint').textContent = 'Confirming…';
-        const { error, paymentIntent } = await stripe.confirmPayment({
-          elements: stripeElements,
-          redirect: 'if_required',
-          confirmParams: { return_url: window.location.origin + '/?paid=1' }
-        });
-        if (error) {
-          if (msg) msg.textContent = error.message;
-          throw new Error(error.message);
-        }
-        if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing')) {
-          if ($('payHint')) $('payHint').textContent = 'Placing your pixels…';
-          await finishClaimAfterPay();
-        } else {
-          throw new Error('Payment not completed — try again');
-        }
-      } catch (err) {
+        throw new Error((data && data.error) || 'Could not start checkout');
+      })
+      .catch(err => {
         paying = false;
         btn.disabled = false;
-        btn.textContent = stripeElements ? 'PAY NOW' : 'PAY & CLAIM';
-        const m = (err && err.message) ? err.message : 'Payment failed';
-        if ($('payHint')) $('payHint').textContent = m;
-        if (msg) msg.textContent = m;
-        toast(m);
-      } finally {
-        if (btn.textContent === 'PLEASE WAIT...' || btn.textContent === 'PAYING...') {
-          paying = false;
-          btn.disabled = false;
-          btn.textContent = stripeElements ? 'PAY NOW' : 'PAY & CLAIM';
-        }
-      }
-    }
-
-    mountAndPay();
+        btn.textContent = 'PAY & CLAIM';
+        const mtxt = (err && err.message) ? err.message : 'Payment failed';
+        if ($('payHint')) $('payHint').textContent = mtxt;
+        if (msg) msg.textContent = mtxt;
+        toast(mtxt);
+      });
   };
 
   window.addEventListener('keydown', e => {
