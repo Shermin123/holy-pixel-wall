@@ -1771,7 +1771,7 @@ Min 100 · Max 400 blocks per buy
     setVal('infoPixels', (r.pixels || 0) + ' PIXELS (OWNED)');
     setVal('infoPrice', 'EDIT MODE');
     if ($('payTotalLine')) $('payTotalLine').textContent = 'SAVE CHANGES — NO NEW CHARGE';
-    const payField = $('payMethods') && $('payMethods').closest('.field');
+    const payField = $('payment-element') && $('payment-element').closest('.field');
     if (payField) payField.style.display = 'none';
     if ($('confirmBtn')) {
       $('confirmBtn').textContent = 'SAVE CHANGES';
@@ -1797,7 +1797,7 @@ Min 100 · Max 400 blocks per buy
     const pm = $('payment-message');
     if (pm) pm.textContent = '';
     $('duration').disabled = false;
-    const payField = $('payMethods') && $('payMethods').closest('.field');
+    const payField = $('payment-element') && $('payment-element').closest('.field');
     if (payField) payField.style.display = '';
     $('confirmBtn').textContent = 'PAY & CLAIM';
     const head = document.querySelector('#claimModal .modal-head h3');
@@ -2090,13 +2090,7 @@ Min 100 · Max 400 blocks per buy
 
   // pay-btn UI removed — Stripe Payment Element handles methods
 
-  // Card number formatting
-
-  $('cardExp').addEventListener('input', e => {
-    let v = e.target.value.replace(/\D/g, '').slice(0, 4);
-    if (v.length >= 3) v = v.slice(0, 2) + '/' + v.slice(2);
-    e.target.value = v;
-  });
+  // Card inputs removed — Stripe Payment Element only
 
   function validatePayment() {
     // Card fields handled by Stripe Payment Element
@@ -2165,7 +2159,7 @@ Min 100 · Max 400 blocks per buy
       }
       sold.set(k, region);
     }
-        regions.push(region);
+    regions.push(region);
     fetch('/api/claim', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2188,11 +2182,7 @@ Min 100 · Max 400 blocks per buy
     $('link').value = '';
     $('linkType').value = 'none';
     $('link').style.display = 'none';
-    $('cardName').value = '';
-    $('cardNumber').value = '';
-    $('cardExp').value = '';
-    $('cardCvv').value = '';
-    $('payEmail').value = '';
+    // legacy card fields removed
     clearPending();
     $('claimModal').style.display = 'none';
     floatBar.classList.remove('visible');
