@@ -708,9 +708,14 @@
       </div>
       <div class="field">
         <label>IMAGE / GIF / VIDEO</label>
+        <p style="font-size:0.9rem;color:var(--muted);margin-bottom:8px;line-height:1.35">
+          Upload a clear JPG, PNG, GIF, or WebP (or MP4/WebM). Square or wide images look best.
+          Your media <strong>fills the whole block</strong> by default.
+        </p>
         <div class="upload" id="upload">
           <input type="file" id="file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,video/mp4,video/webm,video/*" hidden>
-          <p>CLICK OR DROP<br>IMAGE · GIF · VIDEO</p>
+          <p>Click or drop your file here<br>
+          <span style="font-size:0.85rem;opacity:0.85">PNG · JPG · GIF · WebP · MP4 · max 30MB</span></p>
           <img id="preview" alt="">
           <video id="previewVideo" muted loop playsinline style="display:none;max-width:100%;max-height:110px;margin:0 auto"></video>
         </div>
@@ -719,10 +724,15 @@
           <button type="button" class="fit-btn" data-fit="contain">FIT INSIDE</button>
           <button type="button" class="fit-btn" data-fit="fill">STRETCH</button>
         </div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-top:6px;line-height:1.3">
+          <strong>FILL BLOCK</strong> covers every pixel (recommended).
+          FIT INSIDE shows the full image with possible empty edges.
+          STRETCH forces the exact block shape.
+        </p>
       </div>
       <div class="field">
-        <label>OR MEDIA URL</label>
-        <input type="text" id="imgUrl" placeholder="https://... (image, gif, or video)">
+        <label>OR PASTE MEDIA URL</label>
+        <input type="text" id="imgUrl" placeholder="https://… direct link to image, gif, or video">
       </div>
       <div class="field">
         <label>SOCIAL / LINK (PROFILE OR POST)</label>
@@ -774,11 +784,11 @@
     </div>
     <div class="modal-body" style="font-size:1rem;line-height:1.45;color:var(--muted)">
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">1.</strong> Drag to select free pixels.</p>
-      <p style="margin-bottom:10px"><strong style="color:var(--dark)">2.</strong> Add your name, image / GIF / video, optional link & description.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--dark)">2.</strong> Add your name and upload a clear image, GIF, or video (JPG/PNG/WebP/MP4). It fills your whole block by default. Optional link & description.</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">3.</strong> Pay ($0.10 for 1 day, $0.25 for 10 days, or $50 permanent).</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">4.</strong> Your pixels stay locked — others cannot take them until time ends.</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">Hover</strong> any claim to see owner, description, and time left.</p>
-      <p style="margin-top:12px;font-size:0.9rem">Your claims stay on this device until they expire. For a public shared wall with real payments for everyone, connect a backend (e.g. Stripe + database). This UI is ready to publish and plug in.</p>
+      <p style="margin-top:12px;font-size:0.9rem"><strong style="color:var(--dark)">Images:</strong> Prefer square or wide files. FILL BLOCK covers every pixel; FIT INSIDE shows the full image; STRETCH forces the block shape. Max 30MB.</p>
     </div>
     <div class="modal-foot">
       <div style="text-align:left;font-size:0.95rem;color:var(--muted);margin:0 18px 12px;line-height:1.45">
@@ -1990,7 +2000,7 @@ Min 100 blocks · no maximum
     const isVideo = type.startsWith('video/') || /\.(mp4|webm|mov|ogg)$/.test(name);
     const isImage = type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp)$/.test(name);
     if (!isVideo && !isImage) {
-      toast('USE PNG, JPG, GIF, WEBP, OR VIDEO');
+      toast('USE PNG, JPG, GIF, WEBP, OR MP4/WEBM');
       return;
     }
     if (/heic|heif/i.test(type) || /\.(heic|heif)$/.test(name)) {
@@ -2019,7 +2029,7 @@ Min 100 blocks · no maximum
         if (myGen !== mediaGen) return;
         const mediaType = (type === 'image/gif' || name.endsWith('.gif')) ? 'gif' : 'image';
         setPending(dataUrl, mediaType);
-        toast('IMAGE READY');
+        toast('IMAGE READY — FILLS YOUR BLOCK');
       })
       .catch(() => {
         if (myGen !== mediaGen) return;
@@ -2027,7 +2037,7 @@ Min 100 blocks · no maximum
         reader.onload = e => {
           if (myGen !== mediaGen) return;
           setPending(e.target.result, detectMediaType(e.target.result, type));
-          toast('IMAGE READY');
+          toast('IMAGE READY — FILLS YOUR BLOCK');
         };
         reader.onerror = () => toast('IMAGE FAILED — TRY JPG/PNG');
         reader.readAsDataURL(f);
@@ -2254,7 +2264,7 @@ Min 100 blocks · no maximum
     }
     const nm = ($('ownerName').value || '').trim();
     if (!nm) { toast('ENTER OWNER NAME'); return; }
-    if (!pendingMedia) { toast('ADD AN IMAGE OR VIDEO'); return; }
+    if (!pendingMedia) { toast('ADD AN IMAGE, GIF, OR VIDEO'); return; }
 
     // One-click Stripe Checkout (Card + Apple Pay + Google Pay on Stripe)
     const keys = Array.from(selected);
