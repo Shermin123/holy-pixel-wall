@@ -788,7 +788,7 @@ Scroll = pan · Pinch / Ctrl+wheel = zoom<br>
 Space+drag or DRAG tool = pan<br>
 Ctrl+Z = undo · Esc = clear · Enter = claim<br>
 Arrows = pan · +/− = zoom · 0 = fit<br>
-Min 100 · Max 400 blocks per buy
+Min 100 blocks per buy · no max
 </div>
 <button class="btn btn-pri" id="helpClose">GOT IT</button>
     </div>
@@ -839,7 +839,7 @@ Min 100 · Max 400 blocks per buy
   let panning = false, panLastX = 0, panLastY = 0;
   const SECTION = 10; // big block = 10×10 pixels
   const MIN_BUY = 100;
-  const MAX_BUY = 400;
+  const MAX_BUY = 50000; // no practical max — whole wall
   let sizeW = 600, sizeH = 600, cell = 6;
   let baseW = 600, baseH = 600, baseCell = 6;
   let zoom = 1, hqZoom = 1, zoomTimer = null;
@@ -1545,7 +1545,7 @@ Min 100 · Max 400 blocks per buy
       tip.innerHTML = '<strong>RECTANGLE</strong>contains ' + blocked + ' owned — pick a free area';
     } else if (w * h >= MAX_BUY && tip) {
       tip.style.display = 'block';
-      tip.innerHTML = '<strong>MAX ' + MAX_BUY + '</strong>blocks per purchase';
+      tip.innerHTML = '<strong>' + selected.size + ' BLOCKS</strong>';
     }
     try { draw(); } catch (err) { console.warn(err); }
     try { updateFloat(); } catch (err) { console.warn(err); }
@@ -2852,7 +2852,7 @@ window.addEventListener('resize', () => resize(false));
     }
   })();
 
-  setTimeout(() => toast('DRAG A RECTANGLE · 100–400 BLOCKS · SCROLL TO MOVE · PINCH TO ZOOM'), 600);
+  setTimeout(() => toast('DRAG A RECTANGLE · MIN 100 BLOCKS · SCROLL TO MOVE · PINCH TO ZOOM'), 600);
 })();
 </script>
 </body>
