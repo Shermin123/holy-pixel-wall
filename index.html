@@ -707,32 +707,26 @@
         </div>
       </div>
       <div class="field">
-        <label>IMAGE / GIF / VIDEO</label>
-        <p style="font-size:0.9rem;color:var(--muted);margin-bottom:8px;line-height:1.35">
-          Upload a clear JPG, PNG, GIF, or WebP (or MP4/WebM). Square or wide images look best.
-          Your media <strong>fills the whole block</strong> by default.
-        </p>
+        <label>YOUR IMAGE</label>
         <div class="upload" id="upload">
           <input type="file" id="file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,video/mp4,video/webm,video/*" hidden>
-          <p>Click or drop your file here<br>
-          <span style="font-size:0.85rem;opacity:0.85">PNG · JPG · GIF · WebP · MP4 · max 30MB</span></p>
+          <p style="line-height:1.4"><strong style="color:var(--dark)">Tap to add a photo</strong><br>
+          <span style="font-size:0.9rem">or drag a file here</span><br>
+          <span style="font-size:0.85rem;opacity:0.8">JPG, PNG, GIF, or video · under 2MB is best</span></p>
           <img id="preview" alt="">
           <video id="previewVideo" muted loop playsinline style="display:none;max-width:100%;max-height:110px;margin:0 auto"></video>
         </div>
-        <div class="fit-row" id="fitRow" style="display:none">
-          <button type="button" class="fit-btn active" data-fit="cover">FILL BLOCK</button>
-          <button type="button" class="fit-btn" data-fit="contain">FIT INSIDE</button>
+        <div class="fit-row" id="fitRow" style="display:none;margin-top:8px">
+          <button type="button" class="fit-btn active" data-fit="cover">FILL</button>
+          <button type="button" class="fit-btn" data-fit="contain">FIT</button>
           <button type="button" class="fit-btn" data-fit="fill">STRETCH</button>
         </div>
-        <p style="font-size:0.85rem;color:var(--muted);margin-top:6px;line-height:1.3">
-          <strong>FILL BLOCK</strong> covers every pixel (recommended).
-          FIT INSIDE shows the full image with possible empty edges.
-          STRETCH forces the exact block shape.
-        </p>
-      </div>
-      <div class="field">
-        <label>OR PASTE MEDIA URL</label>
-        <input type="text" id="imgUrl" placeholder="https://… direct link to image, gif, or video">
+        <p id="fitHint" style="display:none;font-size:0.85rem;color:var(--muted);margin-top:6px">FILL = covers the whole block (best)</p>
+        <details style="margin-top:8px;font-size:0.85rem;color:var(--muted)">
+          <summary style="cursor:pointer;color:var(--muted)">More options</summary>
+          <input type="text" id="imgUrl" placeholder="Or paste image link (https://…)" style="width:100%;margin-top:8px;padding:8px 10px;background:#fff;border:3px solid var(--border);color:var(--text);font-family:'VT323',monospace;font-size:1.05rem">
+          <p style="margin-top:8px;line-height:1.35">Tip: smaller files load faster. Free compress: squoosh.app</p>
+        </details>
       </div>
       <div class="field">
         <label>SOCIAL / LINK (PROFILE OR POST)</label>
@@ -784,11 +778,11 @@
     </div>
     <div class="modal-body" style="font-size:1rem;line-height:1.45;color:var(--muted)">
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">1.</strong> Drag to select free pixels.</p>
-      <p style="margin-bottom:10px"><strong style="color:var(--dark)">2.</strong> Add your name and upload a clear image, GIF, or video (JPG/PNG/WebP/MP4). It fills your whole block by default. Optional link & description.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--dark)">2.</strong> Add your name and a photo (tap to upload). Optional link & description.</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">3.</strong> Pay ($0.10 for 1 day, $0.25 for 10 days, or $50 permanent).</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">4.</strong> Your pixels stay locked — others cannot take them until time ends.</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">Hover</strong> any claim to see owner, description, and time left.</p>
-      <p style="margin-top:12px;font-size:0.9rem"><strong style="color:var(--dark)">Images:</strong> Prefer square or wide files. FILL BLOCK covers every pixel; FIT INSIDE shows the full image; STRETCH forces the block shape. Max 30MB.</p>
+      <p style="margin-top:12px;font-size:0.9rem"><strong style="color:var(--dark)">Photo tip:</strong> Use a clear JPG or PNG under 2MB. It fills your block automatically.</p>
     </div>
     <div class="modal-foot">
       <div style="text-align:left;font-size:0.95rem;color:var(--muted);margin:0 18px 12px;line-height:1.45">
@@ -1888,6 +1882,7 @@ Min 100 blocks · no maximum
     pendingType = type || detectMediaType(src);
     upload.classList.add('has');
     if ($('fitRow')) $('fitRow').style.display = 'flex';
+    if ($('fitHint')) $('fitHint').style.display = 'block';
     if (pendingType === 'video') {
       if (previewImg) {
         previewImg.style.display = 'none';
@@ -1923,6 +1918,7 @@ Min 100 blocks · no maximum
     pendingType = 'image';
     upload.classList.remove('has');
     if ($('fitRow')) $('fitRow').style.display = 'none';
+    if ($('fitHint')) $('fitHint').style.display = 'none';
     if (previewImg) {
       previewImg.removeAttribute('src');
       previewImg.style.display = 'none';
@@ -2029,7 +2025,7 @@ Min 100 blocks · no maximum
         if (myGen !== mediaGen) return;
         const mediaType = (type === 'image/gif' || name.endsWith('.gif')) ? 'gif' : 'image';
         setPending(dataUrl, mediaType);
-        toast('IMAGE READY — FILLS YOUR BLOCK');
+        toast('PHOTO ADDED');
       })
       .catch(() => {
         if (myGen !== mediaGen) return;
@@ -2037,7 +2033,7 @@ Min 100 blocks · no maximum
         reader.onload = e => {
           if (myGen !== mediaGen) return;
           setPending(e.target.result, detectMediaType(e.target.result, type));
-          toast('IMAGE READY — FILLS YOUR BLOCK');
+          toast('PHOTO ADDED');
         };
         reader.onerror = () => toast('IMAGE FAILED — TRY JPG/PNG');
         reader.readAsDataURL(f);
@@ -2264,7 +2260,7 @@ Min 100 blocks · no maximum
     }
     const nm = ($('ownerName').value || '').trim();
     if (!nm) { toast('ENTER OWNER NAME'); return; }
-    if (!pendingMedia) { toast('ADD AN IMAGE, GIF, OR VIDEO'); return; }
+    if (!pendingMedia) { toast('PLEASE ADD A PHOTO'); return; }
 
     // One-click Stripe Checkout (Card + Apple Pay + Google Pay on Stripe)
     const keys = Array.from(selected);
