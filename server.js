@@ -39,9 +39,9 @@ function soldMap(db) {
   return m;
 }
 function priceUnit(duration) {
-  if (duration === 'permanent') return 50;
-  if (duration === '1day') return 0.1;
-  return 0.25;
+  if (duration === 'permanent') return 250;
+  if (duration === '1day') return 0.5;
+  return 1.25; // 10 days
 }
 function json(res, code, obj) {
   res.writeHead(code, {
