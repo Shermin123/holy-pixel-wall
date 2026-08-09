@@ -1168,16 +1168,26 @@ Min 100 · Max 400 blocks per buy
     });
   }
 
+  let drawRaf = 0;
+  function scheduleDraw() {
+    if (drawRaf) return;
+    drawRaf = requestAnimationFrame(() => {
+      drawRaf = 0;
+      try { draw(); } catch (e) {}
+    });
+  }
+
   function getImg(src) {
     if (!src) return null;
     if (imgCache.has(src)) return imgCache.get(src);
     const img = new Image();
     img.decoding = 'async';
-    img.crossOrigin = 'anonymous';
-    img.onload = () => { draw(); };
+    // data: URLs must not set crossOrigin
+    if (!String(src).startsWith('data:')) img.crossOrigin = 'anonymous';
+    img.onload = () => { scheduleDraw(); };
     img.onerror = () => {
       imgCache.delete(src);
-      toast('IMAGE FAILED TO LOAD');
+      // silent for replaced pending images
     };
     try { img.src = src; } catch (e) { return null; }
     imgCache.set(src, img);
@@ -1612,7 +1622,13 @@ Min 100 · Max 400 blocks per buy
   function onUp() {
     if (!dragging) return;
     dragging = false;
-    if (selected.size) pushSelectHistory();
+    // Keep didDrag true until next click tick so canvas click ignores this gesture
+    if (selected.size) {
+      pushSelectHistory();
+      setTimeout(() => { didDrag = false; }, 0);
+    } else {
+      didDrag = false;
+    }
     try { updateFloat(); } catch (err) {}
     try { draw(); } catch (err) {}
   }
@@ -1869,41 +1885,64 @@ Min 100 · Max 400 blocks per buy
   const previewImg = $('preview');
   const previewVideo = $('previewVideo');
 
+  let mediaGen = 0; // ignore stale async uploads when picking a 2nd file
+
   function setPending(src, type) {
     if (!src) return;
+    // Drop cached decode of previous pending image so 2nd upload always shows
+    if (pendingMedia && pendingMedia !== src && typeof imgCache !== 'undefined' && imgCache.has(pendingMedia)) {
+      imgCache.delete(pendingMedia);
+    }
     pendingMedia = src;
     pendingType = type || detectMediaType(src);
     upload.classList.add('has');
-    $('fitRow').style.display = 'flex';
-    draw(); // live wall preview
+    if ($('fitRow')) $('fitRow').style.display = 'flex';
     if (pendingType === 'video') {
-      previewImg.style.display = 'none';
-      previewImg.removeAttribute('src');
-      previewVideo.style.display = 'block';
-      previewVideo.src = src;
-      previewVideo.play().catch(() => {});
+      if (previewImg) {
+        previewImg.style.display = 'none';
+        previewImg.removeAttribute('src');
+      }
+      if (previewVideo) {
+        previewVideo.style.display = 'block';
+        previewVideo.src = src;
+        previewVideo.play().catch(() => {});
+      }
     } else {
-      previewVideo.pause();
-      previewVideo.style.display = 'none';
-      previewVideo.removeAttribute('src');
-      previewImg.style.display = 'block';
-      previewImg.onerror = () => toast('PREVIEW FAILED — TRY ANOTHER FILE');
-      previewImg.src = src;
+      if (previewVideo) {
+        previewVideo.pause();
+        previewVideo.style.display = 'none';
+        previewVideo.removeAttribute('src');
+      }
+      if (previewImg) {
+        previewImg.style.display = 'block';
+        previewImg.onerror = () => toast('PREVIEW FAILED — TRY ANOTHER FILE');
+        // force reload even if browser cached empty
+        previewImg.src = '';
+        previewImg.src = src;
+      }
     }
+    // Refresh wall preview without fighting selection
+    try { draw(); } catch (e) {}
   }
 
   function clearPending() {
+    mediaGen++; // invalidate in-flight optimize
+    if (pendingMedia && typeof imgCache !== 'undefined') imgCache.delete(pendingMedia);
     pendingMedia = '';
     pendingType = 'image';
     upload.classList.remove('has');
-    $('fitRow').style.display = 'none';
-    previewImg.removeAttribute('src');
-    previewImg.style.display = 'none';
-    previewVideo.pause();
-    previewVideo.style.display = 'none';
-    previewVideo.removeAttribute('src');
-    $('file').value = '';
-    $('imgUrl').value = '';
+    if ($('fitRow')) $('fitRow').style.display = 'none';
+    if (previewImg) {
+      previewImg.removeAttribute('src');
+      previewImg.style.display = 'none';
+    }
+    if (previewVideo) {
+      previewVideo.pause();
+      previewVideo.style.display = 'none';
+      previewVideo.removeAttribute('src');
+    }
+    if ($('file')) $('file').value = '';
+    if ($('imgUrl')) $('imgUrl').value = '';
   }
 
   // Resize large images so they stay sharp but save cleanly (no storage errors)
@@ -1964,7 +2003,8 @@ Min 100 · Max 400 blocks per buy
 
   function handleFile(f) {
     if (!f) return;
-    const type = f.type || '';
+    const myGen = ++mediaGen;
+    const type = (f.type || '').toLowerCase();
     const name = (f.name || '').toLowerCase();
     const isVideo = type.startsWith('video/') || /\.(mp4|webm|mov|ogg)$/.test(name);
     const isImage = type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp)$/.test(name);
@@ -1984,35 +2024,43 @@ Min 100 · Max 400 blocks per buy
     if (isVideo) {
       const reader = new FileReader();
       reader.onload = e => {
+        if (myGen !== mediaGen) return; // newer file chosen
         setPending(e.target.result, 'video');
         toast('VIDEO READY');
       };
-      reader.onerror = () => toast('VIDEO READ FAILED');
+      reader.onerror = () => { if (myGen === mediaGen) toast('VIDEO READ FAILED'); };
       reader.readAsDataURL(f);
+      if ($('file')) $('file').value = '';
       return;
     }
     optimizeImageFile(f)
       .then(dataUrl => {
+        if (myGen !== mediaGen) return;
         const mediaType = (type === 'image/gif' || name.endsWith('.gif')) ? 'gif' : 'image';
         setPending(dataUrl, mediaType);
         toast('IMAGE READY');
       })
       .catch(() => {
-        // Fallback: raw data URL
+        if (myGen !== mediaGen) return;
         const reader = new FileReader();
         reader.onload = e => {
+          if (myGen !== mediaGen) return;
           setPending(e.target.result, detectMediaType(e.target.result, type));
           toast('IMAGE READY');
         };
         reader.onerror = () => toast('IMAGE FAILED — TRY JPG/PNG');
         reader.readAsDataURL(f);
-      });
+      })
+      .finally(() => { if ($('file')) $('file').value = ''; });
   }
 
   $('file').onchange = () => handleFile($('file').files[0]);
   upload.onclick = e => {
     if (e.target.closest('video') || e.target.closest('img')) return;
-    $('file').click();
+    if ($('file')) {
+      $('file').value = ''; // allow selecting the same or a second file
+      $('file').click();
+    }
   };
   upload.addEventListener('dragover', e => { e.preventDefault(); upload.classList.add('drag'); });
   upload.addEventListener('dragleave', () => upload.classList.remove('drag'));
@@ -2227,7 +2275,7 @@ Min 100 · Max 400 blocks per buy
     if (!nm) { toast('ENTER OWNER NAME'); return; }
     if (!pendingMedia) { toast('ADD AN IMAGE OR VIDEO'); return; }
 
-    // In-page Stripe Payment Element (card / Apple Pay / Google Pay)
+    // Simple pay: 1st click loads card form · 2nd click charges · fallback to Stripe page
     const keys = Array.from(selected);
     const payload = {
       cells: keys,
@@ -2242,35 +2290,80 @@ Min 100 · Max 400 blocks per buy
       paid: keys.length * price()
     };
     pendingClaimPayload = payload;
+    try { sessionStorage.setItem('hpw_pending_claim', JSON.stringify(payload)); } catch (e) {}
 
     const btn = $('confirmBtn');
     const msg = $('payment-message');
     if (msg) msg.textContent = '';
 
+    async function finishClaimAfterPay() {
+      const claimRes = await fetch('/api/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pendingClaimPayload || payload)
+      });
+      const claimData = await claimRes.json().catch(() => ({}));
+      if (!claimRes.ok) {
+        throw new Error((claimData && claimData.error) || 'Paid but claim failed — contact support');
+      }
+      selected.clear();
+      clearPending();
+      closeClaimModal();
+      if (floatBar) floatBar.classList.remove('visible');
+      if (typeof pullWall === 'function') await pullWall();
+      else { save(); draw(); }
+      try { sessionStorage.removeItem('hpw_pending_claim'); } catch (e) {}
+      toast('PAID — PIXELS CLAIMED');
+      stripe = null;
+      stripeElements = null;
+      paymentElement = null;
+      pendingClaimPayload = null;
+    }
+
+    async function checkoutRedirectFallback() {
+      if ($('payHint')) $('payHint').textContent = 'Opening Stripe…';
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      throw new Error((data && data.error) || 'Checkout unavailable');
+    }
+
     async function mountAndPay() {
+      if (paying) return;
       paying = true;
       btn.disabled = true;
-      btn.textContent = 'PREPARING...';
-      if ($('payHint')) $('payHint').textContent = 'Loading secure payment…';
+      btn.textContent = 'PLEASE WAIT...';
+      if ($('payHint')) $('payHint').textContent = 'Preparing payment…';
 
       try {
         if (typeof Stripe === 'undefined') {
-          throw new Error('Stripe.js failed to load — check network');
+          await checkoutRedirectFallback();
+          return;
         }
 
-        // Create or reuse PaymentIntent
+        // First click: mount payment form in modal
         if (!stripeElements) {
           const res = await fetch('/api/create-payment-intent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
-          const data = await res.json();
+          const data = await res.json().catch(() => ({}));
           if (!res.ok || !data.clientSecret) {
-            throw new Error((data && data.error) || 'Could not start payment');
+            // Fallback to hosted Checkout
+            await checkoutRedirectFallback();
+            return;
           }
           if (!data.publishableKey) {
-            throw new Error('Set STRIPE_PUBLISHABLE_KEY on Render');
+            await checkoutRedirectFallback();
+            return;
           }
           stripe = Stripe(data.publishableKey);
           stripeElements = stripe.elements({
@@ -2282,64 +2375,50 @@ Min 100 · Max 400 blocks per buy
           });
           const el = $('payment-element');
           if (el) el.innerHTML = '';
-          paymentElement = stripeElements.create('payment', {
-            layout: 'tabs'
-          });
+          paymentElement = stripeElements.create('payment', { layout: 'tabs' });
           paymentElement.mount('#payment-element');
+          // scroll payment into view
+          if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
           btn.textContent = 'PAY NOW';
           btn.disabled = false;
           paying = false;
-          if ($('payHint')) $('payHint').textContent = 'Enter card or use Apple Pay / Google Pay, then PAY NOW';
-          toast('PAYMENT READY');
+          if ($('payHint')) $('payHint').textContent = 'Card, Apple Pay, or Google Pay — then press PAY NOW';
+          toast('ENTER PAYMENT BELOW');
           return;
         }
 
-        // Confirm payment (stays on page when possible)
+        // Second click: confirm
         btn.textContent = 'PAYING...';
-        if ($('payHint')) $('payHint').textContent = 'Confirming payment…';
+        if ($('payHint')) $('payHint').textContent = 'Confirming…';
         const { error, paymentIntent } = await stripe.confirmPayment({
           elements: stripeElements,
           redirect: 'if_required',
-          confirmParams: {
-            return_url: window.location.origin + '/?paid=1'
-          }
+          confirmParams: { return_url: window.location.origin + '/?paid=1' }
         });
         if (error) {
           if (msg) msg.textContent = error.message;
           throw new Error(error.message);
         }
         if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing')) {
-          if ($('payHint')) $('payHint').textContent = 'Payment OK — placing pixels…';
-          const claimRes = await fetch('/api/claim', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(pendingClaimPayload)
-          });
-          const claimData = await claimRes.json().catch(() => ({}));
-          if (!claimRes.ok) {
-            throw new Error((claimData && claimData.error) || 'Paid but claim failed — contact support');
-          }
-          // Local lock for instant UI
-          selected.clear();
-          clearPending();
-          closeClaimModal();
-          floatBar.classList.remove('visible');
-          if (typeof pullWall === 'function') await pullWall();
-          toast('PAID — PIXELS CLAIMED');
-          // reset stripe widgets for next purchase
-          stripe = null;
-          stripeElements = null;
-          paymentElement = null;
-          pendingClaimPayload = null;
+          if ($('payHint')) $('payHint').textContent = 'Placing your pixels…';
+          await finishClaimAfterPay();
         } else {
-          throw new Error('Payment not completed');
+          throw new Error('Payment not completed — try again');
         }
       } catch (err) {
         paying = false;
         btn.disabled = false;
         btn.textContent = stripeElements ? 'PAY NOW' : 'PAY & CLAIM';
-        if ($('payHint')) $('payHint').textContent = err.message || 'Payment failed';
-        toast(err.message || 'PAYMENT FAILED');
+        const m = (err && err.message) ? err.message : 'Payment failed';
+        if ($('payHint')) $('payHint').textContent = m;
+        if (msg) msg.textContent = m;
+        toast(m);
+      } finally {
+        if (btn.textContent === 'PLEASE WAIT...' || btn.textContent === 'PAYING...') {
+          paying = false;
+          btn.disabled = false;
+          btn.textContent = stripeElements ? 'PAY NOW' : 'PAY & CLAIM';
+        }
       }
     }
 
