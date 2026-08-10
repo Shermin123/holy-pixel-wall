@@ -7,19 +7,7 @@
 <script src="https://js.stripe.com/v3/"></script>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
-  .site-footer {
-  position: fixed;
-  bottom: 6px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-family: 'VT323', monospace;
-  font-size: 0.75rem;
-  color: var(--muted);
-  opacity: 0.65;
-  pointer-events: none;
-  z-index: 20;
-}
+  
   :root {
     --bg: #faf6ee;
     --surface: #fffdf8;
@@ -871,7 +859,8 @@
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">3.</strong> Pay $0.10 / pixel for 30 days, $1 for 3 months, $10 for 6 months, or $50 permanent (max 1000 permanent pixels on the wall).</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">4.</strong> Your pixels stay locked — others cannot take them until time ends.</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">Hover</strong> any claim to see owner, description, and time left.</p>
-      <p style="margin-top:12px;font-size:0.9rem"><strong style="color:var(--dark)">Photo tip:</strong> Use a clear JPG or PNG under 2MB. It fills your block automatically.</p>
+            <p style="margin-top:12px;font-size:0.9rem"><strong style="color:var(--dark)">Photo tip:</strong> Use a clear JPG or PNG under 2MB. It fills your block automatically.</p>
+      <p style="margin-top:16px;border-top:2px dashed var(--border);padding-top:10px;font-size:0.8rem;opacity:0.6">© 2026 Holy Pixel Wall. All rights reserved.</p>
     </div>
     <div class="modal-foot">
       <div style="text-align:left;font-size:0.95rem;color:var(--muted);margin:0 18px 12px;line-height:1.45">
@@ -889,11 +878,6 @@ Min 50 blocks · no maximum
 </div>
 
 <div class="toast" id="toast"></div>
-
-<footer class="site-footer">
-  © 2026 Holy Pixel Wall. All rights reserved.
-</footer>
-
 <script>
 (() => {
   const MS_DAY = 86400000;
