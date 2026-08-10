@@ -649,10 +649,8 @@
     <h1>HOLY PIXEL WALL</h1>
     <p>Claim your place on the Holy Pixel Wall</p>
   </div>
-  <div class="price-hero" title="Base rate">
-    <span class="price-label">RATE</span>
+  <div class="price-hero" title="Price">
     <span class="price-main">1 PIXEL = $0.50</span>
-    <span class="price-sub">per day · packs available below</span>
   </div>
   <div class="center-badge">
     <div class="hw-banner"><span class="hw-text">CLAIM PIXELS</span></div>
@@ -728,8 +726,7 @@
         <label>DURATION</label>
         <select id="duration">
           <option value="1day">1 DAY — $0.50 / PIXEL</option>
-          <option value="daily">10 DAYS — $1.25 / PIXEL</option>
-          <option value="permanent">PERMANENT — $250 / PIXEL</option>
+          <option value="permanent">PERMANENT — $10 / PIXEL</option>
         </select>
       </div>
       <div class="field" style="display:flex;gap:10px">
@@ -805,7 +802,7 @@
     <div class="modal-body" style="font-size:1rem;line-height:1.45;color:var(--muted)">
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">1.</strong> Drag to select free pixels.</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">2.</strong> Add your name and a photo (tap to upload). Optional link & description.</p>
-      <p style="margin-bottom:10px"><strong style="color:var(--dark)">3.</strong> Pay ($0.50 per pixel for 1 day, $1.25 for 10 days, or $250 permanent).</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--dark)">3.</strong> Pay $0.50 per pixel for 1 day, or $10 per pixel permanent.</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">4.</strong> Your pixels stay locked — others cannot take them until time ends.</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">Hover</strong> any claim to see owner, description, and time left.</p>
       <p style="margin-top:12px;font-size:0.9rem"><strong style="color:var(--dark)">Photo tip:</strong> Use a clear JPG or PNG under 2MB. It fills your block automatically.</p>
@@ -909,9 +906,8 @@ Min 100 blocks · no maximum
 
   function price() {
     const d = $('duration').value;
-    if (d === 'permanent') return 250;
-    if (d === '1day') return 0.50;
-    return 1.25; // 10 days
+    if (d === 'permanent') return 10;
+    return 0.50; // 1 day
   }
 
   function durationMs(d) {
