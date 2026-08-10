@@ -720,7 +720,7 @@
     <p>Claim your place on the Holy Pixel Wall</p>
   </div>
   <div class="price-hero" title="Price">
-    <span class="price-main">1 PIXEL = $0.10</span>
+    <span class="price-main">1 PIXEL = $0.50</span>
   </div>
   <div class="center-badge">
     <div class="hw-banner"><span class="hw-text">CLAIM PIXELS</span></div>
@@ -802,7 +802,7 @@
       <div class="field">
         <label>DURATION</label>
         <select id="duration">
-          <option value="1month">30 DAYS — $0.10 / PIXEL</option>
+          <option value="1month">30 DAYS — $0.50 / PIXEL</option>
           <option value="3month">3 MONTHS — $1 / PIXEL</option>
           <option value="6month">6 MONTHS — $10 / PIXEL</option>
           <option value="permanent">PERMANENT — $50 / PIXEL (limited)</option>
@@ -913,7 +913,7 @@ Scroll = pan · Pinch / Ctrl+wheel = zoom<br>
 Space+drag or DRAG tool = pan<br>
 Ctrl+Z = undo · Esc = clear · Enter = claim<br>
 Arrows = pan · +/− = zoom · 0 = fit<br>
-Min 50 blocks · no maximum
+Min 10 blocks · no maximum
 </div>
 <button class="btn btn-pri" id="helpClose">GOT IT</button>
     </div>
@@ -966,7 +966,7 @@ Min 50 blocks · no maximum
   let spaceHeld = false;
   let panning = false, panLastX = 0, panLastY = 0;
   const SECTION = 10; // big block = 10×10 pixels
-  const MIN_BUY = 50;
+  const MIN_BUY = 10;
   const MAX_BUY = 999999; // effectively unlimited
   let sizeW = 600, sizeH = 600, cell = 6;
   let baseW = 600, baseH = 600, baseCell = 6;
@@ -1077,7 +1077,7 @@ Min 50 blocks · no maximum
     if (d === 'permanent') return 50;
     if (d === '6month') return 10;
     if (d === '3month') return 1;
-    return 0.10; // 30 days
+    return 0.50; // 30 days
   }
 
   function durationMs(d) {
@@ -3320,7 +3320,7 @@ window.addEventListener('resize', () => resize(false));
     }
   })();
 
-  setTimeout(() => toast('DRAG A RECTANGLE · MIN 50 BLOCKS · SCROLL TO MOVE · PINCH TO ZOOM'), 600);
+    setTimeout(() => toast('DRAG A RECTANGLE · MIN 10 BLOCKS · SCROLL TO MOVE · PINCH TO ZOOM'), 600);
 })();
 </script>
 </body>
