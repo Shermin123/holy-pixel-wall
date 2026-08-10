@@ -815,7 +815,7 @@ Scroll = pan · Pinch / Ctrl+wheel = zoom<br>
 Space+drag or DRAG tool = pan<br>
 Ctrl+Z = undo · Esc = clear · Enter = claim<br>
 Arrows = pan · +/− = zoom · 0 = fit<br>
-Min 100 blocks · no maximum
+Min 50 blocks · no maximum
 </div>
 <button class="btn btn-pri" id="helpClose">GOT IT</button>
     </div>
@@ -865,7 +865,7 @@ Min 100 blocks · no maximum
   let spaceHeld = false;
   let panning = false, panLastX = 0, panLastY = 0;
   const SECTION = 10; // big block = 10×10 pixels
-  const MIN_BUY = 100;
+  const MIN_BUY = 50;
   const MAX_BUY = 999999; // effectively unlimited
   let sizeW = 600, sizeH = 600, cell = 6;
   let baseW = 600, baseH = 600, baseCell = 6;
@@ -2804,7 +2804,7 @@ window.addEventListener('resize', () => resize(false));
     }
   })();
 
-  setTimeout(() => toast('DRAG A RECTANGLE · MIN 100 BLOCKS · SCROLL TO MOVE · PINCH TO ZOOM'), 600);
+  setTimeout(() => toast('DRAG A RECTANGLE · MIN 50 BLOCKS · SCROLL TO MOVE · PINCH TO ZOOM'), 600);
 })();
 </script>
 </body>
