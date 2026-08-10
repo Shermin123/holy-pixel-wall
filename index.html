@@ -6,6 +6,24 @@
 <title>Holy Pixel Wall</title>
 <script src="https://js.stripe.com/v3/"></script>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  /* --- COPYRIGHT BAR - OUTSIDE WALL --- */
+  .site-copy {
+    flex-shrink: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #fffdf8;
+    border-top: 2px solid var(--gold);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.32rem;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    z-index: 70;
+  }
+  .site-copy .copy-dot { color: var(--gold); }
 <style>
   
   :root {
@@ -733,6 +751,12 @@
     </div>
   </div>
 </div>
+
+<footer class="site-copy">
+  <span>© 2026 Holy Pixel Wall</span>
+  <span class="copy-dot">·</span>
+  <span>All rights reserved</span>
+</footer>
 
 <div class="float-bar" id="floatBar">
   <div class="sel-sum"><strong id="selCount">0</strong> PX · <strong id="selPrice">$0</strong></div>
