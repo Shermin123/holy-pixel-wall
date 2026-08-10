@@ -767,12 +767,23 @@
       </div>
       <div class="field">
         <label>YOUR LINK</label>
-        <p style="font-size:0.9rem;color:var(--muted);margin-bottom:6px">When people click your block, they go here</p>
-        <input type="url" id="link" placeholder="https://instagram.com/you  or any website">
-        <select id="linkType" style="display:none">
-          <option value="website" selected>WEBSITE</option>
-          <option value="none">NONE</option>
-        </select>
+        <p style="font-size:0.9rem;color:var(--muted);margin-bottom:8px">When people click your block, they open this</p>
+        <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+          <select id="linkType" style="flex:1;min-width:120px;padding:8px 6px;background:#fff;border:3px solid var(--border);color:var(--text);font-family:VT323,monospace;font-size:1rem">
+            <option value="none">NO LINK</option>
+            <option value="instagram">INSTAGRAM</option>
+            <option value="tiktok">TIKTOK</option>
+            <option value="youtube">YOUTUBE</option>
+            <option value="twitter">X / TWITTER</option>
+            <option value="website">WEBSITE</option>
+            <option value="other">OTHER</option>
+          </select>
+          <select id="linkKind" style="flex:1;min-width:120px;padding:8px 6px;background:#fff;border:3px solid var(--border);color:var(--text);font-family:VT323,monospace;font-size:1rem;display:none">
+            <option value="profile">PROFILE / ACCOUNT</option>
+            <option value="post">POST / VIDEO</option>
+          </select>
+        </div>
+        <input type="text" id="link" placeholder="Paste profile or post link" style="display:none">
       </div><div class="field">
         <label>PAYMENT</label>
         <p style="font-size:0.9rem;color:var(--muted);margin-bottom:8px">Secure Stripe Checkout · Card, Apple Pay & Google Pay</p>
@@ -1822,12 +1833,11 @@ function getImg(src) {
     fitMode = 'cover';
     crop = { scale: r.cropScale || 1, x: r.cropX ?? 0.5, y: r.cropY ?? 0.5 };
     const lt = $('linkType');
-    if (lt) lt.value = (r.link ? 'website' : 'none');
+    if (lt) lt.value = r.linkType || (r.link ? 'website' : 'none');
     const link = $('link');
-    if (link) {
-      link.style.display = 'block';
-      link.value = r.link || '';
-    }
+    if (link) link.value = r.link || '';
+    try { syncLinkUI(); } catch (e) {}
+
     setVal('infoPixels', (r.pixels || 0) + ' PIXELS (OWNED)');
     setVal('infoPrice', 'EDIT MODE');
     if ($('payTotalLine')) $('payTotalLine').textContent = 'SAVE CHANGES — NO NEW CHARGE';
@@ -2274,13 +2284,65 @@ function clearPending() {
   });
 
   function buildLink() {
-    const v = ($('link') && $('link').value || '').trim();
+    const type = ($('linkType') && $('linkType').value) || 'none';
+    if (type === 'none') return '';
+    let v = ($('link') && $('link').value || '').trim();
     if (!v) return '';
     if (/^https?:\/\//i.test(v)) return v;
-    return 'https://' + v.replace(/^\/+/, '');
+    v = v.replace(/^@/, '').replace(/^\/+/, '');
+    const kind = ($('linkKind') && $('linkKind').value) || 'profile';
+    if (type === 'instagram') {
+      if (kind === 'post' || /\//.test(v)) return v.startsWith('http') ? v : ('https://www.instagram.com/' + v.replace(/^\//, ''));
+      return 'https://www.instagram.com/' + v + '/';
+    }
+    if (type === 'tiktok') {
+      if (kind === 'post' || v.includes('/')) return v.startsWith('http') ? v : ('https://www.tiktok.com/' + v.replace(/^\//, ''));
+      return 'https://www.tiktok.com/@' + v;
+    }
+    if (type === 'youtube') {
+      if (kind === 'post' || /^(watch|shorts|v=)/i.test(v) || v.includes('/')) {
+        if (/^https?:/i.test(v)) return v;
+        if (v.startsWith('watch') || v.includes('v=')) return 'https://www.youtube.com/' + v.replace(/^\//, '');
+        return 'https://www.youtube.com/' + v.replace(/^\//, '');
+      }
+      return 'https://www.youtube.com/@' + v;
+    }
+    if (type === 'twitter') {
+      if (kind === 'post' || v.includes('/')) return v.startsWith('http') ? v : ('https://x.com/' + v.replace(/^\//, ''));
+      return 'https://x.com/' + v;
+    }
+    if (type === 'website' || type === 'other') {
+      return 'https://' + v.replace(/^https?:\/\//i, '');
+    }
+    return v;
   }
 
-  // link is always a simple URL field
+  function syncLinkUI() {
+    const type = ($('linkType') && $('linkType').value) || 'none';
+    const link = $('link');
+    const kind = $('linkKind');
+    if (!link) return;
+    if (type === 'none') {
+      link.style.display = 'none';
+      if (kind) kind.style.display = 'none';
+      return;
+    }
+    link.style.display = 'block';
+    if (kind) {
+      kind.style.display = (type === 'website' || type === 'other') ? 'none' : 'block';
+    }
+    const placeholders = {
+      instagram: kind && kind.value === 'post' ? 'Paste post link or /p/code' : 'username or profile URL',
+      tiktok: kind && kind.value === 'post' ? 'Paste video link' : '@username or profile URL',
+      youtube: kind && kind.value === 'post' ? 'Paste video link' : 'channel @name or URL',
+      twitter: kind && kind.value === 'post' ? 'Paste post link' : 'username or profile URL',
+      website: 'https://yoursite.com',
+      other: 'https://…'
+    };
+    link.placeholder = placeholders[type] || 'Paste link';
+  }
+  if ($('linkType')) $('linkType').onchange = syncLinkUI;
+  if ($('linkKind')) $('linkKind').onchange = syncLinkUI;
 
 
   // Payment method UI
@@ -2343,7 +2405,7 @@ function clearPending() {
       cropX: crop.x,
       cropY: crop.y,
       link: buildLink(),
-      linkType: (($('link') && $('link').value || '').trim() ? 'website' : 'none'),
+      linkType: ($('linkType') && $('linkType').value) || 'none',
       duration: $('duration').value,
       payMethod: payMethod,
       paid: total,
@@ -2388,6 +2450,7 @@ function clearPending() {
     $('desc').value = '';
     $('link').value = '';
     $('linkType').value = 'none';
+    try { syncLinkUI(); } catch (e) {}
     $('link').style.display = 'none';
     // legacy card fields removed
     clearPending();
@@ -2412,7 +2475,7 @@ function clearPending() {
       er.mediaType = pendingType;
       er.fit = 'cover'; er.cropScale = crop.scale; er.cropX = crop.x; er.cropY = crop.y;
       er.link = buildLink();
-      er.linkType = (($('link') && $('link').value || '').trim() ? 'website' : 'none');
+      er.linkType = ($('linkType') && $('linkType').value) || 'none';
       save();
       draw();
       syncMediaOverlays();
@@ -2448,7 +2511,7 @@ function clearPending() {
       cropX: crop.x,
       cropY: crop.y,
       link: typeof buildLink === 'function' ? buildLink() : ($('link').value || ''),
-      linkType: (($('link') && $('link').value || '').trim() ? 'website' : 'none'),
+      linkType: ($('linkType') && $('linkType').value) || 'none',
       paid: keys.length * price()
     };
     try { sessionStorage.setItem('hpw_pending_claim', JSON.stringify(payload)); } catch (e) {}
