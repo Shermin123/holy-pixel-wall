@@ -722,6 +722,7 @@
   <div class="price-hero" title="Price">
     <span class="price-main">1 PIXEL = $0.50</span>
   </div>
+  <button class="tool-btn" id="buyModeBtn" style="background:var(--gold);color:#2c221e">BUY PIXELS</button>
   <div class="center-badge">
     <div class="hw-banner"><span class="hw-text">CLAIM PIXELS</span></div>
   </div>
@@ -961,7 +962,8 @@ Min 10 blocks · no maximum
   let dragging = false, deselect = false, additiveSelect = false, didDrag = false;
   let startC = 0, startR = 0, curC = 0, curR = 0;
   let dragBaseline = new Set(); // selection before this drag started
-  let toolMode = 'select';
+    let toolMode = 'drag';
+  let buyMode = false;
   let devMode = false;
   let spaceHeld = false;
   let panning = false, panLastX = 0, panLastY = 0;
@@ -1790,14 +1792,14 @@ function getImg(src) {
     try { updateFloat(); } catch (err) { console.warn(err); }
   }
 
-  function updateFloat() {
+    function updateFloat() {
     purgeSelectedOwned();
     const n = selected.size;
     if (n > 0) {
-      const issues = typeof selectionIssues === 'function' ? selectionIssues() : [];
+      const issues = typeof selectionIssues === 'function'? selectionIssues() : [];
       $('selCount').textContent = issues.length
-        ? (n + ' · ' + issues[0])
-        : (n + (n < MIN_BUY ? ' (min ' + MIN_BUY + ')' : ''));
+       ? (n + ' · ' + issues[0])
+        : (n + (n < MIN_BUY? ' (min ' + MIN_BUY + ')' : ''));
       $('selPrice').textContent = '$' + (n * price()).toFixed(2);
       floatBar.classList.add('visible');
     } else {
@@ -1807,7 +1809,8 @@ function getImg(src) {
   }
 
   function onDown(e) {
-    if (spaceHeld || toolMode === 'drag' || (e.button != null && e.button !== 0)) return;
+    if (!buyMode) return; // VIEW ONLY - no selecting
+    if (spaceHeld || toolMode === 'drag' || (e.button!= null && e.button!== 0)) return;
     const p = pos(e);
     const key = p.c + ',' + p.r;
     if (sold.has(key)) {
@@ -2962,19 +2965,46 @@ function clearPending() {
   
   // Zoom — smooth CSS while moving, sharp redraw when settled (image quality kept)
 
-  // Tools: SELECT (pixels) or DRAG (move wall)
+    // Tools: SELECT or DRAG - SINGLE DEFINITION ONLY
   function setTool(mode) {
+    if (!buyMode && mode === 'select') {
+      toast('CLICK BUY PIXELS FIRST');
+      return;
+    }
     toolMode = mode;
-    const sel = $('toolSelect');
-    const drag = $('toolDrag');
-    if (sel) sel.classList.toggle('tool-active', mode === 'select');
-    if (drag) drag.classList.toggle('tool-active', mode === 'drag');
+    $('toolSelect')?.classList.toggle('tool-active', mode === 'select' && buyMode);
+    $('toolDrag')?.classList.toggle('tool-active', mode === 'drag');
     viewport.classList.toggle('drag-mode', mode === 'drag');
-    if (mode === 'drag') toast('DRAG MODE — drag to move');
-    else toast('SELECT MODE — drag to select pixels');
   }
-  if ($('toolSelect')) $('toolSelect').onclick = () => setTool('select');
-  if ($('toolDrag')) $('toolDrag').onclick = () => setTool('drag');
+
+  function setBuyMode(on) {
+    buyMode = on;
+    const btn = $('buyModeBtn');
+    if (btn) {
+      btn.textContent = on ? 'VIEW MODE' : 'BUY PIXELS';
+      btn.style.background = on ? '#fff' : 'var(--gold)';
+    }
+    if (on) {
+      toolMode = 'select';
+      $('toolSelect')?.classList.add('tool-active');
+      $('toolDrag')?.classList.remove('tool-active');
+      viewport.classList.remove('drag-mode');
+      toast('BUY MODE — SELECT 10+ PIXELS');
+    } else {
+      toolMode = 'drag';
+      $('toolSelect')?.classList.remove('tool-active');
+      $('toolDrag')?.classList.add('tool-active');
+      viewport.classList.add('drag-mode');
+      selected.clear();
+      updateFloat();
+      draw();
+      toast('VIEW MODE — CLICK LOGOS TO VISIT');
+    }
+  }
+
+  $('toolSelect').onclick = () => setTool('select');
+  $('toolDrag').onclick = () => setTool('drag');
+  $('buyModeBtn').onclick = () => setBuyMode(!buyMode);
   if ($('toolDev')) $('toolDev').onclick = () => {
     devMode = !devMode;
     $('toolDev').classList.toggle('tool-active', devMode);
@@ -3287,7 +3317,8 @@ window.addEventListener('resize', () => resize(false));
       if (!navigator.onLine) toast('Offline — showing saved wall', 'error');
     }
     try { resize(true); } catch (e) { console.warn(e); }
-    requestAnimationFrame(() => resize(true));
+        requestAnimationFrame(() => resize(true));
+    setBuyMode(false);
     setInterval(pullWall, 15000);
 
     // Back from Stripe success
