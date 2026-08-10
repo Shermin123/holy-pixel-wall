@@ -682,7 +682,7 @@
     <p>Claim your place on the Holy Pixel Wall</p>
   </div>
   <div class="price-hero" title="Price">
-    <span class="price-main">1 PIXEL = $0.50</span>
+    <span class="price-main">FROM $3 / PIXEL</span>
   </div>
   <div class="center-badge">
     <div class="hw-banner"><span class="hw-text">CLAIM PIXELS</span></div>
@@ -758,7 +758,8 @@
       <div class="field">
         <label>DURATION</label>
         <select id="duration">
-          <option value="1day">1 DAY — $0.50 / PIXEL</option>
+          <option value="1month">1 MONTH — $3 / PIXEL</option>
+          <option value="3month">3 MONTHS — $7 / PIXEL</option>
           <option value="permanent">PERMANENT — $10 / PIXEL</option>
         </select>
       </div>
@@ -853,7 +854,7 @@
     <div class="modal-body" style="font-size:1rem;line-height:1.45;color:var(--muted)">
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">1.</strong> Drag to select free pixels.</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">2.</strong> Add your name and a photo (tap to upload). Optional link & description.</p>
-      <p style="margin-bottom:10px"><strong style="color:var(--dark)">3.</strong> Pay $0.50 per pixel for 1 day, or $10 per pixel permanent.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--dark)">3.</strong> Pay $3 / pixel for 1 month, $7 for 3 months, or $10 permanent.</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">4.</strong> Your pixels stay locked — others cannot take them until time ends.</p>
       <p style="margin-bottom:10px"><strong style="color:var(--dark)">Hover</strong> any claim to see owner, description, and time left.</p>
       <p style="margin-top:12px;font-size:0.9rem"><strong style="color:var(--dark)">Photo tip:</strong> Use a clear JPG or PNG under 2MB. It fills your block automatically.</p>
@@ -1027,13 +1028,18 @@ Min 50 blocks · no maximum
   function price() {
     const d = $('duration').value;
     if (d === 'permanent') return 10;
-    return 0.50; // 1 day
+    if (d === '3month') return 7;
+    return 3; // 1 month
   }
 
   function durationMs(d) {
     if (d === 'permanent') return Infinity;
+    if (d === '3month') return MS_DAY * 90;
+    if (d === '1month') return MS_DAY * 30;
+    // legacy
     if (d === '1day') return MS_DAY;
-    return MS_DAY * 10;
+    if (d === 'daily') return MS_DAY * 10;
+    return MS_DAY * 30;
   }
 
   function expired(r) {
@@ -1937,7 +1943,9 @@ function getImg(src) {
     setVal('desc', r.desc || '');
     const dur = $('duration');
     if (dur) {
-      dur.value = r.duration === '1day' ? '1day' : (r.duration === 'permanent' ? 'permanent' : 'daily');
+      dur.value = (r.duration === 'permanent' || r.duration === '3month' || r.duration === '1month')
+        ? r.duration
+        : (r.duration === '1day' ? '1month' : '1month');
       dur.disabled = true;
     }
     if (r.media) setPending(r.media, r.mediaType || 'image');
