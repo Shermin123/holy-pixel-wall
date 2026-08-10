@@ -477,6 +477,36 @@
   }
 
   .field { margin-bottom: 12px; }
+  .field input.invalid, .field select.invalid, .field .upload.invalid {
+    border-color: var(--danger) !important;
+  }
+  .field input.valid, .field .upload.valid {
+    border-color: var(--success) !important;
+  }
+  .form-status {
+    font-size: 0.95rem;
+    line-height: 1.35;
+    margin: 0 0 12px;
+    padding: 8px 10px;
+    border: 2px solid var(--border);
+    background: #fff;
+    color: var(--muted);
+  }
+  .form-status.ok {
+    border-color: var(--success);
+    color: var(--success);
+  }
+  .form-status.err {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+  .btn-pri:disabled, .btn-claim:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
   .field label {
     display: block;
     font-family: 'Press Start 2P', monospace;
@@ -607,6 +637,8 @@
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+  .toast.toast-err { border-color: var(--danger); color: var(--danger); }
+  .toast.toast-ok { border-color: var(--success); color: var(--success); }
 
   .motivation-card {
     background: var(--surface);
@@ -714,6 +746,7 @@
       <p>Once paid, your pixels stay locked until time runs out.</p>
     </div>
     <div class="modal-body">
+      <div class="form-status" id="formStatus">Fill in the fields to continue</div>
       <div class="field">
         <label>OWNER / BRAND</label>
         <input type="text" id="ownerName" placeholder="YOUR NAME" maxlength="40">
@@ -919,12 +952,77 @@ Min 50 blocks · no maximum
     { t: "NEW DAY", x: "Setbacks make space for better things. Tomorrow is a fresh map." }
   ];
 
-  function toast(msg) {
-    toastEl.textContent = msg;
+  function toast(msg, kind) {
+    if (!toastEl) return;
+    toastEl.textContent = String(msg || '');
+    toastEl.classList.remove('toast-err', 'toast-ok');
+    if (kind === 'error') toastEl.classList.add('toast-err');
+    if (kind === 'ok') toastEl.classList.add('toast-ok');
     toastEl.classList.add('show');
     clearTimeout(toastEl._t);
-    toastEl._t = setTimeout(() => toastEl.classList.remove('show'), 2400);
+    toastEl._t = setTimeout(() => toastEl.classList.remove('show', 'toast-err', 'toast-ok'), kind === 'error' ? 4200 : 2600);
   }
+
+  function friendlyError(err, fallback) {
+    const raw = err && (err.message || err.error) ? String(err.message || err.error) : String(err || '');
+    const low = raw.toLowerCase();
+    if (!navigator.onLine || low.includes('failed to fetch') || low.includes('networkerror')) {
+      return 'No internet — check your connection';
+    }
+    if (err && err.name === 'AbortError') return 'Request timed out — try again';
+    if (low.includes('not configured') || low.includes('stripe')) return raw.slice(0, 140);
+    if (low.includes('quota') || low.includes('storage')) return 'Browser storage full — use a smaller image';
+    if (raw && raw.length > 0 && raw.length < 140) return raw;
+    return fallback || 'Something went wrong — try again';
+  }
+
+  async function apiFetch(url, options, label) {
+    options = options || {};
+    const ctrl = new AbortController();
+    const ms = options.timeout || 25000;
+    const timer = setTimeout(() => ctrl.abort(), ms);
+    try {
+      if (!navigator.onLine) throw new Error('No internet — check your connection');
+      const headers = Object.assign({}, options.headers || {});
+      if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+      const res = await fetch(url, {
+        method: options.method || 'GET',
+        headers,
+        body: options.body,
+        signal: ctrl.signal
+      });
+      const text = await res.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : {}; } catch (e) {
+        if (!res.ok) throw new Error((label || 'Request') + ' failed (' + res.status + ')');
+        data = {};
+      }
+      if (!res.ok) {
+        const e = new Error((data && (data.error || data.message)) || ((label || 'Request') + ' failed (' + res.status + ')'));
+        e.status = res.status;
+        e.data = data;
+        throw e;
+      }
+      return data;
+    } catch (err) {
+      throw new Error(friendlyError(err, (label || 'Request') + ' failed'));
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function setPayError(msg) {
+    const el = $('payment-message');
+    const hint = $('payHint');
+    if (el) el.textContent = msg || '';
+    if (hint && msg) hint.textContent = msg;
+  }
+
+  window.addEventListener('online', () => toast('Back online', 'ok'));
+  window.addEventListener('offline', () => toast('You are offline', 'error'));
+  window.addEventListener('error', e => { console.warn('window error', e.message); });
+  window.addEventListener('unhandledrejection', e => { console.warn('promise reject', e.reason); });
+
 
   function price() {
     const d = $('duration').value;
@@ -966,28 +1064,38 @@ Min 50 blocks · no maximum
         })
       }));
     } catch (e) {
-      toast('STORAGE FULL — large files may not persist');
+      console.warn('save failed', e);
+      toast(friendlyError(e, 'Could not save locally — use a smaller image'), 'error');
     }
   }
 
   function load() {
     try {
-      const d = JSON.parse(localStorage.getItem(STORE) || '{}');
+      const raw = localStorage.getItem(STORE);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (!d || typeof d !== 'object') return;
       regions = [];
       sold.clear();
-      (d.regions || []).forEach(r => {
-        if (expired(r)) return;
-        if (!r.mediaType) r.mediaType = detectMediaType(r.media);
-        regions.push(r);
-        if (r.cells && r.cells.length) {
-          r.cells.forEach(k => sold.set(k, r));
-        } else {
-          for (let c = r.minC; c <= r.maxC; c++)
-            for (let row = r.minR; row <= r.maxR; row++)
-              sold.set(c + ',' + row, r);
-        }
+      (Array.isArray(d.regions) ? d.regions : []).forEach(r => {
+        try {
+          if (!r || expired(r)) return;
+          if (!r.mediaType) r.mediaType = detectMediaType(r.media);
+          regions.push(r);
+          if (r.cells && r.cells.length) {
+            r.cells.forEach(k => sold.set(k, r));
+          } else if (r.minC != null) {
+            for (let c = r.minC; c <= r.maxC; c++)
+              for (let row = r.minR; row <= r.maxR; row++)
+                sold.set(c + ',' + row, r);
+          }
+        } catch (err) { console.warn('skip region', err); }
       });
-    } catch (e) {}
+    } catch (e) {
+      console.warn('load failed', e);
+      try { localStorage.removeItem(STORE); } catch (e2) {}
+      toast('Saved data was corrupt — started fresh', 'error');
+    }
   }
 
   function resize(fitReset) {
@@ -1617,12 +1725,16 @@ function getImg(src) {
     purgeSelectedOwned();
     const n = selected.size;
     if (n > 0) {
-      $('selCount').textContent = n + (n < MIN_BUY ? ' (min ' + MIN_BUY + ')' : '');
+      const issues = typeof selectionIssues === 'function' ? selectionIssues() : [];
+      $('selCount').textContent = issues.length
+        ? (n + ' · ' + issues[0])
+        : (n + (n < MIN_BUY ? ' (min ' + MIN_BUY + ')' : ''));
       $('selPrice').textContent = '$' + (n * price()).toFixed(2);
       floatBar.classList.add('visible');
     } else {
       floatBar.classList.remove('visible');
     }
+    try { refreshClaimValidation(); } catch (e) {}
   }
 
   function onDown(e) {
@@ -1895,43 +2007,161 @@ function getImg(src) {
     return true;
   }
 
-  $('claimBtn').onclick = () => {
-    purgeSelectedOwned();
-    if (!selected.size) {
-      toast('NO FREE PIXELS SELECTED');
-      updateFloat();
-      return;
-    }
-    if (selected.size < MIN_BUY) {
-      toast('MINIMUM ' + MIN_BUY + ' BLOCKS');
-      return;
-    }
-    // no maximum
-    if (!isSolidRectangle(Array.from(selected))) {
-      toast('SELECT A SOLID RECTANGLE ONLY');
-      return;
-    }
-    // Abort if any selected cell became owned
+  function selectionIssues() {
+    const issues = [];
+    const n = selected.size;
+    if (!n) issues.push('Select pixels on the wall');
+    else if (n < MIN_BUY) issues.push('Need at least ' + MIN_BUY + ' free pixels (now ' + n + ')');
     for (const k of selected) {
       if (sold.has(k)) {
-        toast('SELECTION INCLUDES OWNED PIXELS');
-        purgeSelectedOwned();
-        updateFloat();
-        draw();
-        return;
+        issues.push('Selection includes owned pixels');
+        break;
       }
     }
+    if (n && !isSolidRectangle(Array.from(selected))) {
+      issues.push('Selection must be one solid rectangle');
+    }
+    return issues;
+  }
+
+  function linkIssues() {
+    const issues = [];
+    const type = ($('linkType') && $('linkType').value) || 'none';
+    if (type === 'none') return issues;
+    const v = ($('link') && $('link').value || '').trim();
+    if (!v) {
+      issues.push('Add a profile or post link');
+      return issues;
+    }
+    // If looks like URL, basic check
+    if (/^https?:\/\//i.test(v)) {
+      try { new URL(v); }
+      catch (e) { issues.push('Link URL is not valid'); }
+    } else if (type === 'website' || type === 'other') {
+      if (!/\./.test(v)) issues.push('Enter a full website (example.com)');
+    } else if (v.length < 2) {
+      issues.push('Username or link is too short');
+    }
+    return issues;
+  }
+
+  function claimFormIssues(opts) {
+    opts = opts || {};
+    const issues = [];
+    if (!opts.skipSelection) issues.push.apply(issues, selectionIssues());
+    const name = ($('ownerName') && $('ownerName').value || '').trim();
+    if (!name) issues.push('Enter owner / brand name');
+    else if (name.length < 2) issues.push('Name is too short');
+    if (!pendingMedia) issues.push('Add a photo for your block');
+    issues.push.apply(issues, linkIssues());
+    return issues;
+  }
+
+  function markField(el, ok, active) {
+    if (!el) return;
+    el.classList.remove('invalid', 'valid');
+    if (!active) return;
+    el.classList.add(ok ? 'valid' : 'invalid');
+  }
+
+  function refreshClaimValidation() {
+    const status = $('formStatus');
+    const btn = $('confirmBtn');
+    const modal = $('claimModal');
+    const open = modal && modal.style.display === 'flex';
+    const editing = !!editingRegion;
+
+    // Floating CLAIM button
+    const claimBtn = $('claimBtn');
+    const selIssues = selectionIssues();
+    if (claimBtn) {
+      claimBtn.disabled = selIssues.length > 0;
+      claimBtn.title = selIssues[0] || 'Claim selected pixels';
+    }
+
+    // Selection bar hint
+    const n = selected.size;
+    if (n > 0 && $('selCount')) {
+      if (selIssues.length) {
+        $('selCount').textContent = n + ' · ' + selIssues[0];
+      }
+    }
+
+    if (!open) return true;
+
+    const name = ($('ownerName') && $('ownerName').value || '').trim();
+    const nameOk = name.length >= 2;
+    markField($('ownerName'), nameOk, true);
+
+    const mediaOk = !!pendingMedia;
+    markField($('upload'), mediaOk, true);
+
+    const type = ($('linkType') && $('linkType').value) || 'none';
+    const linkActive = type !== 'none';
+    const lIssues = linkIssues();
+    markField($('link'), linkActive ? lIssues.length === 0 : true, linkActive);
+
+    const issues = claimFormIssues({ skipSelection: editing });
+    // When editing, selection checks skipped
+    if (editing) {
+      const ei = [];
+      if (!nameOk) ei.push('Enter owner / brand name');
+      if (!mediaOk) ei.push('Add a photo for your block');
+      ei.push.apply(ei, lIssues);
+      if (status) {
+        if (!ei.length) {
+          status.className = 'form-status ok';
+          status.textContent = 'Ready to save changes';
+        } else {
+          status.className = 'form-status err';
+          status.textContent = ei[0];
+        }
+      }
+      if (btn && btn.textContent.indexOf('SAVE') >= 0) btn.disabled = ei.length > 0;
+      return ei.length === 0;
+    }
+
+    if (status) {
+      if (!issues.length) {
+        status.className = 'form-status ok';
+        const total = (selected.size * price()).toFixed(2);
+        status.textContent = 'Ready · ' + selected.size + ' pixels · $' + total;
+      } else {
+        status.className = 'form-status err';
+        status.textContent = issues[0];
+      }
+    }
+    if (btn && !paying) {
+      const canPay = issues.length === 0;
+      btn.disabled = !canPay;
+      if (canPay && btn.textContent === 'PAY & CLAIM') {
+        /* keep label */
+      }
+    }
+    return issues.length === 0;
+  }
+
+
+  $('claimBtn').onclick = () => {
+    purgeSelectedOwned();
+    const issues = selectionIssues();
+    if (issues.length) {
+      toast(issues[0].toUpperCase());
+      updateFloat();
+      draw();
+      return;
+    }
     updatePayTotal();
-    $('confirmBtn').disabled = false;
     $('confirmBtn').textContent = 'PAY & CLAIM';
     $('claimModal').style.display = 'flex';
     document.body.style.overflow = 'hidden';
+    try { updateBlockPreview(); refreshClaimValidation(); } catch (e) {}
   };
   $('cancelBtn').onclick = () => {
     closeClaimModal();
     $('confirmBtn').disabled = false;
   };
-  $('duration').onchange = () => { updateFloat(); updatePayTotal(); };
+  $('duration').onchange = () => { updateFloat(); updatePayTotal(); try { refreshClaimValidation(); } catch (e) {} };
 
   const upload = $('upload');
   const previewImg = $('preview');
@@ -1969,7 +2199,7 @@ function getImg(src) {
       }
       if (previewImg) {
         previewImg.style.display = 'block';
-        previewImg.onerror = () => toast('PREVIEW FAILED — TRY ANOTHER FILE');
+        previewImg.onerror = () => toast('Preview failed — try another file', 'error');
         // force reload even if browser cached empty
         previewImg.src = '';
         previewImg.src = src;
@@ -1978,6 +2208,7 @@ function getImg(src) {
     // Refresh wall + modal block preview
     try { draw(); } catch (e) {}
     try { bindPreviewControls(); updateBlockPreview(); } catch (e) {}
+    try { refreshClaimValidation(); } catch (e) {}
   }
 
   function selectionBounds() {
@@ -2118,6 +2349,7 @@ function clearPending() {
     if ($('file')) $('file').value = '';
     if ($('imgUrl')) $('imgUrl').value = '';
     if ($('blockPreviewWrap')) $('blockPreviewWrap').style.display = 'none';
+    try { refreshClaimValidation(); } catch (e) {}
   }
 
   // Resize large images so they stay sharp but save cleanly (no storage errors)
@@ -2203,7 +2435,7 @@ function clearPending() {
         setPending(e.target.result, 'video');
         toast('VIDEO READY');
       };
-      reader.onerror = () => { if (myGen === mediaGen) toast('VIDEO READ FAILED'); };
+      reader.onerror = () => { if (myGen === mediaGen) toast('Could not read video', 'error'); };
       reader.readAsDataURL(f);
       if ($('file')) $('file').value = '';
       return;
@@ -2223,7 +2455,7 @@ function clearPending() {
           setPending(e.target.result, detectMediaType(e.target.result, type));
           toast('PHOTO ADDED');
         };
-        reader.onerror = () => toast('IMAGE FAILED — TRY JPG/PNG');
+        reader.onerror = () => toast('Could not read image — try JPG or PNG', 'error');
         reader.readAsDataURL(f);
       })
       .finally(() => { if ($('file')) $('file').value = ''; });
@@ -2344,6 +2576,25 @@ function clearPending() {
   if ($('linkType')) $('linkType').onchange = syncLinkUI;
   if ($('linkKind')) $('linkKind').onchange = syncLinkUI;
 
+  ['ownerName', 'desc', 'link', 'duration'].forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener('input', () => { try { refreshClaimValidation(); updatePayTotal(); } catch (e) {} });
+    el.addEventListener('change', () => { try { refreshClaimValidation(); updatePayTotal(); } catch (e) {} });
+  });
+  const _syncLinkUI = typeof syncLinkUI === 'function' ? syncLinkUI : null;
+  if ($('linkType')) {
+    $('linkType').addEventListener('change', () => {
+      try { syncLinkUI(); refreshClaimValidation(); } catch (e) {}
+    });
+  }
+  if ($('linkKind')) {
+    $('linkKind').addEventListener('change', () => {
+      try { syncLinkUI(); refreshClaimValidation(); } catch (e) {}
+    });
+  }
+
+
 
   // Payment method UI
   let payMethod = 'card';
@@ -2429,22 +2680,33 @@ function clearPending() {
       sold.set(k, region);
     }
     regions.push(region);
-    fetch('/api/claim', {
+    apiFetch('/api/claim', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         cells: keys,
         name: region.name,
         desc: region.desc,
         media: region.media,
         mediaType: region.mediaType,
-        fit: region.fit,
+        fit: region.fit || 'cover',
+        cropScale: region.cropScale || 1,
+        cropX: region.cropX ?? 0.5,
+        cropY: region.cropY ?? 0.5,
         link: region.link,
         linkType: region.linkType,
         duration: region.duration,
         paid: region.paid
-      })
-    }).catch(() => {});
+      }),
+      timeout: 30000
+    }, 'Claim').then(() => {
+      toast('Pixels claimed', 'ok');
+    }).catch(err => {
+      // Roll back local lock if server rejected
+      keys.forEach(x => { if (sold.get(x) === region) sold.delete(x); });
+      regions = regions.filter(r => r !== region);
+      try { draw(); syncMediaOverlays(); } catch (e) {}
+      toast(friendlyError(err, 'Claim failed'), 'error');
+    });
     selected.clear();
     $('ownerName').value = '';
     $('desc').value = '';
@@ -2452,7 +2714,6 @@ function clearPending() {
     $('linkType').value = 'none';
     try { syncLinkUI(); } catch (e) {}
     $('link').style.display = 'none';
-    // legacy card fields removed
     clearPending();
     $('claimModal').style.display = 'none';
     floatBar.classList.remove('visible');
@@ -2484,18 +2745,12 @@ function clearPending() {
       toast('UPDATED — ' + (er.name || 'ANON').toUpperCase());
       return;
     }
-    if (paying || !selected.size) return;
-    if (selected.size < MIN_BUY) {
-      toast('MINIMUM ' + MIN_BUY + ' BLOCKS');
-      return;
-    }
-    if (!isSolidRectangle(Array.from(selected))) {
-      toast('SELECT A SOLID RECTANGLE ONLY');
+    if (paying) return;
+    if (!refreshClaimValidation()) {
+      toast(($('formStatus') && $('formStatus').textContent) || 'CHECK FORM');
       return;
     }
     const nm = ($('ownerName').value || '').trim();
-    if (!nm) { toast('ENTER OWNER NAME'); return; }
-    if (!pendingMedia) { toast('PLEASE ADD A PHOTO'); return; }
 
     // One-click Stripe Checkout (Card + Apple Pay + Google Pay on Stripe)
     const keys = Array.from(selected);
@@ -2524,14 +2779,13 @@ function clearPending() {
     btn.textContent = 'OPENING PAY…';
     if ($('payHint')) $('payHint').textContent = 'Redirecting to secure Stripe Checkout…';
 
-    fetch('/api/checkout', {
+    apiFetch('/api/checkout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-      .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })))
-      .then(({ ok, data }) => {
-        if (ok && data && data.url) {
+      body: JSON.stringify(payload),
+      timeout: 30000
+    }, 'Checkout')
+      .then(data => {
+        if (data && data.url) {
           window.location.href = data.url;
           return;
         }
@@ -2541,10 +2795,10 @@ function clearPending() {
         paying = false;
         btn.disabled = false;
         btn.textContent = 'PAY & CLAIM';
-        const mtxt = (err && err.message) ? err.message : 'Payment failed';
-        if ($('payHint')) $('payHint').textContent = mtxt;
-        if (msg) msg.textContent = mtxt;
-        toast(mtxt);
+        const mtxt = friendlyError(err, 'Payment failed');
+        setPayError(mtxt);
+        toast(mtxt, 'error');
+        try { refreshClaimValidation(); } catch (e) {}
       });
   };
 
@@ -2921,25 +3175,32 @@ window.addEventListener('resize', () => resize(false));
 
   async function pullWall() {
     try {
-      const res = await fetch('/api/wall');
-      if (!res.ok) return false;
-      const data = await res.json();
+      const data = await apiFetch('/api/wall', { timeout: 15000 }, 'Wall sync');
       regions = [];
       sold.clear();
       (data.regions || []).forEach(r => {
-        regions.push(r);
-        (r.cells || []).forEach(k => sold.set(k, r));
+        try {
+          if (!r || expired(r)) return;
+          regions.push(r);
+          (r.cells || []).forEach(k => sold.set(k, r));
+        } catch (err) { console.warn(err); }
       });
       draw();
       syncMediaOverlays();
       return true;
-    } catch (e) { return false; }
+    } catch (e) {
+      console.warn('pullWall', e);
+      return false;
+    }
   }
 
   (async () => {
     const ok = await pullWall();
-    if (!ok) load();
-    resize(true);
+    if (!ok) {
+      load();
+      if (!navigator.onLine) toast('Offline — showing saved wall', 'error');
+    }
+    try { resize(true); } catch (e) { console.warn(e); }
     requestAnimationFrame(() => resize(true));
     setInterval(pullWall, 15000);
 
@@ -2950,19 +3211,17 @@ window.addEventListener('resize', () => resize(false));
       if (raw) {
         try {
           const payload = JSON.parse(raw);
-          const res = await fetch('/api/claim', {
+          await apiFetch('/api/claim', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const data = await res.json().catch(() => ({}));
+            body: JSON.stringify(payload),
+            timeout: 30000
+          }, 'Claim');
           sessionStorage.removeItem('hpw_pending_claim');
           history.replaceState({}, '', '/');
           await pullWall();
-          if (res.ok) toast('PAYMENT OK — PIXELS CLAIMED');
-          else toast((data && data.error) || 'CLAIM FAILED AFTER PAY');
+          toast('Payment OK — pixels claimed', 'ok');
         } catch (e) {
-          toast('CLAIM ERROR AFTER PAY');
+          toast(friendlyError(e, 'Claim failed after payment — contact support'), 'error');
         }
       } else {
         history.replaceState({}, '', '/');
