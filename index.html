@@ -744,15 +744,22 @@
         <div class="upload" id="upload">
           <input type="file" id="file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,video/mp4,video/webm,video/*" hidden>
           <p style="line-height:1.4"><strong style="color:var(--dark)">Add a photo</strong><br>
-          <span style="font-size:0.9rem">tap, drag, or paste (Ctrl+V)</span></p>
-          <img id="preview" alt="">
+          <span style="font-size:0.9rem">tap, drag, or paste</span></p>
+          <img id="preview" alt="" style="display:none">
           <video id="previewVideo" muted loop playsinline style="display:none;max-width:100%;max-height:110px;margin:0 auto"></video>
         </div>
         <input type="url" id="imgUrl" placeholder="Or paste photo link (https://…)" style="width:100%;margin-top:8px;padding:8px 10px;background:#fff;border:3px solid var(--border);color:var(--text);font-family:VT323,monospace;font-size:1.05rem">
-        <div id="blockPreviewWrap" style="display:none;margin-top:10px">
-          <p style="font-size:0.9rem;color:var(--muted);margin-bottom:6px">Preview on your block</p>
-          <div style="background:#2a2118;border:2px solid var(--border);padding:6px;text-align:center">
-            <canvas id="blockPreview" width="280" height="160" style="max-width:100%;height:auto;background:#1a1512"></canvas>
+        <div id="blockPreviewWrap" style="display:none;margin-top:12px">
+          <p style="font-size:0.95rem;color:var(--dark);margin-bottom:6px;font-family:'Press Start 2P',monospace;font-size:0.38rem">PREVIEW ON YOUR BLOCK</p>
+          <p style="font-size:0.9rem;color:var(--muted);margin-bottom:8px">Drag to move · scroll or buttons to zoom</p>
+          <div id="previewStage" style="position:relative;margin:0 auto;background:#1a1512;border:3px solid var(--gold);box-shadow:3px 3px 0 rgba(92,61,30,0.3);overflow:hidden;cursor:grab;max-width:100%;touch-action:none">
+            <canvas id="blockPreview" style="display:block;width:100%;height:100%"></canvas>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px">
+            <button type="button" class="btn btn-sec" id="zoomOutPreview" style="padding:8px 12px">−</button>
+            <span id="zoomPreviewLabel" style="font-family:'Press Start 2P',monospace;font-size:0.4rem;color:var(--dark);min-width:48px;text-align:center">100%</span>
+            <button type="button" class="btn btn-sec" id="zoomInPreview" style="padding:8px 12px">+</button>
+            <button type="button" class="btn btn-sec" id="zoomResetPreview" style="padding:8px 12px">RESET</button>
           </div>
         </div>
         <div class="fit-row" id="fitRow" style="display:none"></div>
@@ -856,7 +863,11 @@ Min 50 blocks · no maximum
   let regions = [];
   let pendingMedia = '';
   let pendingType = 'image';
-  let fitMode = 'cover'; // always fill — no user choice
+  let fitMode = 'cover'; // always fill the block
+  // Image crop inside the block (1 = cover-to-fit, higher = zoom in)
+  let crop = { scale: 1, x: 0.5, y: 0.5 }; // x/y = focus point 0..1
+  let previewDrag = null;
+
   let dragging = false, deselect = false, additiveSelect = false, didDrag = false;
   let startC = 0, startR = 0, curC = 0, curR = 0;
   let dragBaseline = new Set(); // selection before this drag started
@@ -1203,7 +1214,37 @@ Min 50 blocks · no maximum
     });
   }
 
-  function getImg(src) {
+  
+  // Draw image to fully cover (w,h) with zoom scale and focus (fx,fy in 0..1)
+  function drawCoverCrop(c, img, x, y, w, h, scale, fx, fy) {
+    if (!img || !img.complete || !img.naturalWidth) return;
+    scale = Math.max(1, scale || 1);
+    fx = fx == null ? 0.5 : fx;
+    fy = fy == null ? 0.5 : fy;
+    const nw = img.naturalWidth, nh = img.naturalHeight;
+    const ir = nw / nh, br = w / h;
+    // base cover size
+    let bw, bh;
+    if (ir > br) { bh = h; bw = h * ir; }
+    else { bw = w; bh = w / ir; }
+    const dw = bw * scale, dh = bh * scale;
+    // focus: point (fx,fy) on image maps toward center of box
+    let dx = x + (w - dw) * fx;
+    let dy = y + (h - dh) * fy;
+    // clamp so cover never shows gaps
+    dx = Math.min(x, Math.max(x + w - dw, dx));
+    dy = Math.min(y, Math.max(y + h - dh, dy));
+    c.save();
+    c.beginPath();
+    c.rect(x, y, w, h);
+    c.clip();
+    c.imageSmoothingEnabled = true;
+    c.imageSmoothingQuality = 'high';
+    c.drawImage(img, dx, dy, dw, dh);
+    c.restore();
+  }
+
+function getImg(src) {
     if (!src) return null;
     if (imgCache.has(src)) return imgCache.get(src);
     const img = new Image();
@@ -1360,7 +1401,7 @@ Min 50 blocks · no maximum
       ctx.fillRect(x0, y0, w, h);
       if (r.media && r.mediaType === 'image') {
         const img = getImg(r.media);
-        if (img?.complete) drawFit(ctx, img, x0, y0, w, h, r.fit || 'cover');
+        if (img?.complete) drawCoverCrop(ctx, img, x0, y0, w, h, r.cropScale || 1, r.cropX ?? 0.5, r.cropY ?? 0.5);
       } else if (!r.media) {
         // Decorative owned pixel pattern when no image
         ctx.fillStyle = 'rgba(255,255,255,0.12)';
@@ -1436,7 +1477,7 @@ Min 50 blocks · no maximum
         ctx.globalAlpha = 0.92;
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(x, y, w, h);
-        if (img?.complete) drawFit(ctx, img, x, y, w, h, fitMode || 'cover');
+        if (img?.complete) drawCoverCrop(ctx, img, x, y, w, h, crop.scale, crop.x, crop.y);
         ctx.globalAlpha = 1;
         ctx.strokeStyle = '#1a1512';
         ctx.lineWidth = 2;
@@ -1744,7 +1785,7 @@ Min 50 blocks · no maximum
       ectx.fillRect(x, y, w, h);
       if (r.media && r.mediaType === 'image') {
         const img = getImg(r.media);
-        if (img?.complete) drawFit(ectx, img, x, y, w, h, r.fit || 'cover');
+        if (img?.complete) drawCoverCrop(ectx, img, x, y, w, h, r.cropScale || 1, r.cropX ?? 0.5, r.cropY ?? 0.5);
       }
       ectx.restore();
     });
@@ -1779,9 +1820,7 @@ Min 50 blocks · no maximum
     if (r.media) setPending(r.media, r.mediaType || 'image');
     else clearPending();
     fitMode = 'cover';
-    document.querySelectorAll('.fit-btn').forEach(b => {
-      if (b.dataset.fit) b.classList.toggle('active', b.dataset.fit === fitMode);
-    });
+    crop = { scale: r.cropScale || 1, x: r.cropX ?? 0.5, y: r.cropY ?? 0.5 };
     const lt = $('linkType');
     if (lt) lt.value = (r.link ? 'website' : 'none');
     const link = $('link');
@@ -1898,6 +1937,7 @@ Min 50 blocks · no maximum
     }
     pendingMedia = src;
     pendingType = type || detectMediaType(src);
+    crop = { scale: 1, x: 0.5, y: 0.5 };
     upload.classList.add('has');
     if ($('fitRow')) $('fitRow').style.display = 'flex';
     if ($('fitHint')) $('fitHint').style.display = 'block';
@@ -1927,7 +1967,7 @@ Min 50 blocks · no maximum
     }
     // Refresh wall + modal block preview
     try { draw(); } catch (e) {}
-    try { updateBlockPreview(); } catch (e) {}
+    try { bindPreviewControls(); updateBlockPreview(); } catch (e) {}
   }
 
   function selectionBounds() {
@@ -1945,48 +1985,110 @@ Min 50 blocks · no maximum
   function updateBlockPreview() {
     const wrap = $('blockPreviewWrap');
     const cv = $('blockPreview');
-    const meta = $('blockPreviewMeta');
-    if (!wrap || !cv) return;
+    const stage = $('previewStage');
+    if (!wrap || !cv || !stage) return;
     const b = selectionBounds();
-    if (!pendingMedia || !b) {
-      wrap.style.display = 'none';
+    if (!pendingMedia || !b || pendingType === 'video') {
+      if (pendingType === 'video' && pendingMedia && b) {
+        wrap.style.display = 'block';
+        const maxW = Math.min(320, (stage.parentElement && stage.parentElement.clientWidth) || 320);
+        const aspect = b.w / Math.max(1, b.h);
+        let pw = maxW, ph = Math.round(maxW / aspect);
+        if (ph > 200) { ph = 200; pw = Math.round(200 * aspect); }
+        stage.style.width = pw + 'px';
+        stage.style.height = ph + 'px';
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        cv.width = Math.round(pw * dpr);
+        cv.height = Math.round(ph * dpr);
+        const c = cv.getContext('2d');
+        c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        c.fillStyle = '#1a1512';
+        c.fillRect(0, 0, pw, ph);
+        c.fillStyle = '#c4a574';
+        c.font = '14px sans-serif';
+        c.textAlign = 'center';
+        c.fillText('Video fills this block', pw / 2, ph / 2);
+      } else {
+        wrap.style.display = 'none';
+      }
       return;
     }
     wrap.style.display = 'block';
-    const maxW = 280, maxH = 160;
+    const maxW = Math.min(320, (wrap.clientWidth || 320));
     const aspect = b.w / Math.max(1, b.h);
     let pw = maxW, ph = Math.round(maxW / aspect);
-    if (ph > maxH) { ph = maxH; pw = Math.round(maxH * aspect); }
-    pw = Math.max(40, pw); ph = Math.max(40, ph);
+    if (ph > 220) { ph = 220; pw = Math.round(220 * aspect); }
+    pw = Math.max(80, pw); ph = Math.max(80, ph);
+    stage.style.width = pw + 'px';
+    stage.style.height = ph + 'px';
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = Math.round(pw * dpr);
     cv.height = Math.round(ph * dpr);
-    cv.style.width = pw + 'px';
-    cv.style.height = ph + 'px';
     const c = cv.getContext('2d');
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.fillStyle = '#1a1512';
     c.fillRect(0, 0, pw, ph);
-    if (meta) meta.textContent = b.w + ' × ' + b.h + ' blocks · ' + (fitMode || 'cover').toUpperCase();
-    if (pendingType === 'video') {
-      c.fillStyle = '#c4a574';
-      c.font = '14px sans-serif';
-      c.textAlign = 'center';
-      c.fillText('Video will play in this block', pw / 2, ph / 2);
-      return;
-    }
     const img = getImg(pendingMedia);
     if (img && img.complete) {
-      drawFit(c, img, 0, 0, pw, ph, fitMode || 'cover');
-      c.strokeStyle = '#c4a574';
-      c.lineWidth = 2;
-      c.strokeRect(1, 1, pw - 2, ph - 2);
+      drawCoverCrop(c, img, 0, 0, pw, ph, crop.scale, crop.x, crop.y);
     } else if (img) {
       img.onload = () => { try { updateBlockPreview(); draw(); } catch (e) {} };
     }
+    // frame
+    c.strokeStyle = '#d4a017';
+    c.lineWidth = 2;
+    c.strokeRect(1, 1, pw - 2, ph - 2);
+    const zl = $('zoomPreviewLabel');
+    if (zl) zl.textContent = Math.round(crop.scale * 100) + '%';
   }
 
-  function clearPending() {
+  function previewZoom(delta) {
+    crop.scale = Math.max(1, Math.min(4, crop.scale + delta));
+    updateBlockPreview();
+    try { draw(); } catch (e) {}
+  }
+
+  function bindPreviewControls() {
+    const stage = $('previewStage');
+    if (!stage || stage._bound) return;
+    stage._bound = true;
+    stage.addEventListener('pointerdown', e => {
+      if (!pendingMedia) return;
+      stage.setPointerCapture(e.pointerId);
+      previewDrag = { x: e.clientX, y: e.clientY, cx: crop.x, cy: crop.y };
+      stage.style.cursor = 'grabbing';
+    });
+    stage.addEventListener('pointermove', e => {
+      if (!previewDrag) return;
+      const rect = stage.getBoundingClientRect();
+      const dx = (e.clientX - previewDrag.x) / Math.max(1, rect.width);
+      const dy = (e.clientY - previewDrag.y) / Math.max(1, rect.height);
+      // dragging image: move focus opposite to drag
+      crop.x = Math.max(0, Math.min(1, previewDrag.cx - dx));
+      crop.y = Math.max(0, Math.min(1, previewDrag.cy - dy));
+      updateBlockPreview();
+      try { draw(); } catch (err) {}
+    });
+    const end = () => {
+      previewDrag = null;
+      if (stage) stage.style.cursor = 'grab';
+    };
+    stage.addEventListener('pointerup', end);
+    stage.addEventListener('pointercancel', end);
+    stage.addEventListener('wheel', e => {
+      e.preventDefault();
+      previewZoom(e.deltaY > 0 ? -0.1 : 0.1);
+    }, { passive: false });
+    if ($('zoomInPreview')) $('zoomInPreview').onclick = () => previewZoom(0.15);
+    if ($('zoomOutPreview')) $('zoomOutPreview').onclick = () => previewZoom(-0.15);
+    if ($('zoomResetPreview')) $('zoomResetPreview').onclick = () => {
+      crop = { scale: 1, x: 0.5, y: 0.5 };
+      updateBlockPreview();
+      try { draw(); } catch (e) {}
+    };
+  }
+
+function clearPending() {
     mediaGen++; // invalidate in-flight optimize
     if (pendingMedia && typeof imgCache !== 'undefined') imgCache.delete(pendingMedia);
     pendingMedia = '';
@@ -2236,7 +2338,10 @@ Min 50 blocks · no maximum
       color: '#4472c4',
       media: pendingMedia,
       mediaType: pendingType,
-      fit: fitMode,
+      fit: 'cover',
+      cropScale: crop.scale,
+      cropX: crop.x,
+      cropY: crop.y,
       link: buildLink(),
       linkType: (($('link') && $('link').value || '').trim() ? 'website' : 'none'),
       duration: $('duration').value,
@@ -2305,7 +2410,7 @@ Min 50 blocks · no maximum
       er.desc = $('desc').value.trim().slice(0, 120);
       er.media = pendingMedia;
       er.mediaType = pendingType;
-      er.fit = fitMode;
+      er.fit = 'cover'; er.cropScale = crop.scale; er.cropX = crop.x; er.cropY = crop.y;
       er.link = buildLink();
       er.linkType = (($('link') && $('link').value || '').trim() ? 'website' : 'none');
       save();
@@ -2338,7 +2443,10 @@ Min 50 blocks · no maximum
       duration: $('duration').value,
       media: pendingMedia,
       mediaType: pendingType,
-      fit: fitMode,
+      fit: 'cover',
+      cropScale: crop.scale,
+      cropX: crop.x,
+      cropY: crop.y,
       link: typeof buildLink === 'function' ? buildLink() : ($('link').value || ''),
       linkType: (($('link') && $('link').value || '').trim() ? 'website' : 'none'),
       paid: keys.length * price()
