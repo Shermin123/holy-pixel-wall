@@ -720,7 +720,7 @@
     <p>Claim your place on the Holy Pixel Wall</p>
   </div>
   <div class="price-hero" title="Price">
-    <span class="price-main">1 PIXEL = $0.50</span>
+    <span class="price-main">1 PIXEL = $0.10</span>
   </div>
   <button class="tool-btn" id="buyModeBtn" style="background:var(--gold);color:#2c221e">BUY PIXELS</button>
   <div class="center-badge">
@@ -761,6 +761,7 @@
   <button class="tool-btn" id="zoomFit">FIT</button>
   <button class="tool-btn" id="exportBtn">EXPORT</button>
   <button class="tool-btn" id="helpBtn">HOW IT WORKS</button>
+  <button class="tool-btn" id="adminBtn" type="button" title="Owner admin">ADMIN</button>
 </div>
 
 <div class="viewport" id="viewport">
@@ -917,6 +918,29 @@ Arrows = pan · +/− = zoom · 0 = fit<br>
 Min 10 blocks · no maximum
 </div>
 <button class="btn btn-pri" id="helpClose">GOT IT</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="adminModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head">
+      <h3>ADMIN — ALL CLAIMS</h3>
+      <p>Remove any image / claim. Keep your key private.</p>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>ADMIN KEY</label>
+        <input type="password" id="adminKeyInput" placeholder="Your secret key" autocomplete="off">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <button type="button" class="btn btn-sec" id="adminLoadBtn">LOAD CLAIMS</button>
+        <button type="button" class="btn btn-sec" id="adminClearBtn" style="border-color:var(--danger);color:var(--danger)">DELETE ALL</button>
+      </div>
+      <div id="adminList" style="max-height:40vh;overflow:auto;font-size:0.95rem;line-height:1.35"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-sec" id="adminCloseBtn">CLOSE</button>
     </div>
   </div>
 </div>
@@ -2962,7 +2986,89 @@ function clearPending() {
   if ($('helpBtn')) $('helpBtn').onclick = () => { $('helpModal').style.display = 'flex'; };
   if ($('helpClose')) $('helpClose').onclick = () => { $('helpModal').style.display = 'none'; };
 
-  
+  // ===== OWNER ADMIN — control every claim/image =====
+  function getAdminKey() {
+    const el = $('adminKeyInput');
+    const typed = el && el.value ? el.value.trim() : '';
+    if (typed) {
+      try { localStorage.setItem('hpw_admin_key', typed); } catch (e) {}
+      return typed;
+    }
+    try { return localStorage.getItem('hpw_admin_key') || ''; } catch (e) { return ''; }
+  }
+
+  async function adminLoadClaims() {
+    const key = getAdminKey();
+    const box = $('adminList');
+    if (!key) { toast('ENTER ADMIN KEY', 'error'); return; }
+    if (box) box.innerHTML = 'Loading…';
+    try {
+      const data = await apiFetch('/api/admin/list?key=' + encodeURIComponent(key), { timeout: 20000 }, 'Admin list');
+      const regions = data.regions || [];
+      if (!regions.length) {
+        if (box) box.innerHTML = '<p style="color:var(--muted)">No claims yet.</p>';
+        return;
+      }
+      if (box) {
+        box.innerHTML = regions.map(r => {
+          const when = r.claimedAt ? new Date(r.claimedAt).toLocaleString() : '—';
+          return '<div style="border:2px solid var(--border);padding:8px;margin-bottom:8px;background:#fff">' +
+            '<strong style="color:var(--dark)">' + (r.name || 'ANON') + '</strong> · ' + (r.pixels || 0) + ' px · ' + (r.duration || '') +
+            '<br><span style="color:var(--muted)">' + (r.desc || '') + '</span>' +
+            '<br><span style="color:var(--muted);font-size:0.85rem">' + when + (r.link ? ' · link set' : '') + (r.hasMedia ? ' · has image' : '') + '</span>' +
+            '<br><button type="button" class="btn btn-sec admin-del" data-id="' + r.id + '" style="margin-top:6px;border-color:var(--danger);color:var(--danger);font-size:0.35rem;padding:6px 10px">DELETE</button>' +
+            '</div>';
+        }).join('');
+        box.querySelectorAll('.admin-del').forEach(btn => {
+          btn.onclick = async () => {
+            if (!confirm('Delete this claim and free its pixels?')) return;
+            try {
+              await apiFetch('/api/admin/delete', {
+                method: 'POST',
+                body: JSON.stringify({ key: getAdminKey(), id: btn.dataset.id }),
+                timeout: 20000
+              }, 'Admin delete');
+              toast('CLAIM REMOVED', 'ok');
+              await pullWall();
+              adminLoadClaims();
+            } catch (e) {
+              toast(friendlyError(e, 'Delete failed'), 'error');
+            }
+          };
+        });
+      }
+    } catch (e) {
+      if (box) box.innerHTML = '';
+      toast(friendlyError(e, 'Admin load failed'), 'error');
+    }
+  }
+
+  if ($('adminBtn')) $('adminBtn').onclick = () => {
+    try {
+      const saved = localStorage.getItem('hpw_admin_key');
+      if (saved && $('adminKeyInput')) $('adminKeyInput').value = saved;
+    } catch (e) {}
+    $('adminModal').style.display = 'flex';
+  };
+  if ($('adminCloseBtn')) $('adminCloseBtn').onclick = () => { $('adminModal').style.display = 'none'; };
+  if ($('adminLoadBtn')) $('adminLoadBtn').onclick = () => adminLoadClaims();
+  if ($('adminClearBtn')) $('adminClearBtn').onclick = async () => {
+    if (!confirm('Delete ALL claims on the wall? This cannot be undone.')) return;
+    if (!confirm('Type OK in the next step mentally — really delete everything?')) return;
+    try {
+      await apiFetch('/api/admin/clear', {
+        method: 'POST',
+        body: JSON.stringify({ key: getAdminKey(), confirm: 'DELETE_ALL' }),
+        timeout: 20000
+      }, 'Admin clear');
+      toast('WALL CLEARED', 'ok');
+      await pullWall();
+      adminLoadClaims();
+    } catch (e) {
+      toast(friendlyError(e, 'Clear failed'), 'error');
+    }
+  };
+
   // Zoom — smooth CSS while moving, sharp redraw when settled (image quality kept)
 
     // Tools: SELECT or DRAG - SINGLE DEFINITION ONLY
