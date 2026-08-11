@@ -254,6 +254,54 @@
     transition: width 0.3s steps(8);
   }
 
+  /* Primary CTA — hard to miss */
+  .buy-cta {
+    font-family: 'Press Start 2P', monospace !important;
+    font-size: 0.55rem !important;
+    letter-spacing: 1px;
+    padding: 12px 18px !important;
+    background: linear-gradient(180deg, #ffe566 0%, #f0c14b 45%, #d4a017 100%) !important;
+    color: #2c221e !important;
+    border: 3px solid #fff !important;
+    box-shadow: 0 0 0 3px #d4a017, 5px 5px 0 #3d2b1a !important;
+    cursor: pointer;
+    animation: buyPulse 1.4s steps(2) infinite;
+    white-space: nowrap;
+    z-index: 60;
+  }
+  .buy-cta:hover {
+    transform: translate(-2px, -2px) scale(1.04);
+    box-shadow: 0 0 0 3px #e6c04a, 7px 7px 0 #3d2b1a !important;
+  }
+  .buy-cta:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 2px #d4a017, 2px 2px 0 #3d2b1a !important;
+    animation: none;
+  }
+  .buy-cta.is-active {
+    background: linear-gradient(180deg, #fff 0%, #f5efe3 100%) !important;
+    color: #5c3d1e !important;
+    animation: none;
+    box-shadow: 3px 3px 0 #3d2b1a !important;
+    border-color: var(--border) !important;
+  }
+  @keyframes buyPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 3px #d4a017, 5px 5px 0 #3d2b1a;
+      filter: brightness(1);
+    }
+    50% {
+      box-shadow: 0 0 0 6px rgba(212, 160, 23, 0.45), 5px 5px 0 #3d2b1a;
+      filter: brightness(1.08);
+    }
+  }
+  @media (max-width: 700px) {
+    .buy-cta {
+      font-size: 0.42rem !important;
+      padding: 10px 12px !important;
+    }
+  }
+
   .toolbar {
     display: flex;
     align-items: center;
@@ -722,7 +770,7 @@
   <div class="price-hero" title="Price">
     <span class="price-main">1 PIXEL = $0.10</span>
   </div>
-  <button class="tool-btn" id="buyModeBtn" style="background:var(--gold);color:#2c221e">BUY PIXELS</button>
+  <button class="buy-cta" id="buyModeBtn" type="button">★ BUY PIXELS ★</button>
   <div class="center-badge">
     <div class="hw-banner"><span class="hw-text">CLAIM PIXELS</span></div>
   </div>
@@ -3087,8 +3135,10 @@ function clearPending() {
     buyMode = on;
     const btn = $('buyModeBtn');
     if (btn) {
-      btn.textContent = on ? 'VIEW MODE' : 'BUY PIXELS';
-      btn.style.background = on ? '#fff' : 'var(--gold)';
+      btn.textContent = on ? '✓ VIEW MODE' : '★ BUY PIXELS ★';
+      btn.classList.toggle('is-active', on);
+      btn.style.background = '';
+      btn.style.color = '';
     }
     if (on) {
       toolMode = 'select';
